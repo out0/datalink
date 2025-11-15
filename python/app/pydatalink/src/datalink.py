@@ -28,7 +28,7 @@ class Datalink:
         if hasattr(Datalink, "lib"):
             return
         
-        lib_path = os.path.join(os.path.dirname(__file__), "../cpp", "libdriveless.so")
+        lib_path = os.path.join(os.path.dirname(__file__), "../cpp", "libdatalink.so")
 
         Datalink.lib = ctypes.CDLL(lib_path)
 

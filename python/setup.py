@@ -4,7 +4,7 @@ with open("app/README.md", "r") as f:
     long_description = f.read()
 
 setup(
-    name="Datalink",
+    name="pydatalink",
     version="1.0.0",
     description="Provides a TCP stable self-recoverable and very fast PPP connection",
     package_dir={"": "app"},
