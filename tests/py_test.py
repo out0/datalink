@@ -1,12 +1,11 @@
 import sys
-sys.path.append("..")
 import unittest
-from python.app.Datalink.src import datalink
+from pydatalink import Datalink
 import time
 import numpy as np
 
-server = datalink.Datalink(port=20000, timeout=-1)
-client = datalink.Datalink(host= "127.0.0.1", port=20000, timeout=-1)
+server = Datalink(port=20000, timeout=-1)
+client = Datalink(host= "127.0.0.1", port=20000, timeout=-1)
 
 class TestDataLink(unittest.TestCase):
     _start_time: int = 0

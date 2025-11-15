@@ -1,9 +1,7 @@
 #
 # Testing the datalink using separated process
 #
-import sys
-sys.path.append("..")
-from python.app.Datalink.src.datalink import Datalink
+from pydatalink import Datalink
 import time
 import numpy as np
 import cv2

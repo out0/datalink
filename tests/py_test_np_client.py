@@ -1,11 +1,8 @@
 #
 # Testing the datalink using separated process
 #
-import sys
-sys.path.append("..")
-from python.app.Datalink.src.datalink import Datalink
+from pydatalink import Datalink
 import time
-import numpy as np
 
 def main ():
     link = Datalink(host="127.0.0.1", port=21001, timeout=2)
