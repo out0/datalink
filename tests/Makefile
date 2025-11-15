@@ -1,20 +1,19 @@
 bin:
-	rm -rf build
-	mkdir -p build
-	cd build && cmake ..  -DCMAKE_BUILD_TYPE=Debug
-	cd build && make -j$(nproc) VERBOSE=1
-	mkdir -p python/app/Datalink/cpp
+	rm -rf cpp/build
+	mkdir -p cpp/build
+	cd cpp/build && cmake ..  -DCMAKE_BUILD_TYPE=Debug
+	cd cpp/build && make -j$(nproc) VERBOSE=1
 
 all: bin
-	mv build/unittest .
-	mv build/tst_client .
-	mv build/tst_server .
-	mv build/tst_bridge .
-	rm -rf build
+	mv cpp/build/unittest .
+	mv cpp/build/tst_client .
+	mv cpp/build/tst_server .
+	mv cpp/build/tst_bridge .
+	rm -rf cpp/build
 
 test: all
 	./unittest
-	rm unittest
+	rm unittest tst_client tst_server tst_bridge
 
 clean:
 	rm -rf build unittest tst_client tst_server tst_bridge

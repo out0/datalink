@@ -28,17 +28,17 @@ include_directories(${GTEST_INCLUDE_DIRS})
 # )
 
 SET(TARGET_H
-  ../include/datalink.h
-  ../include/databridge.h
+  ../../include/datalink.h
+  ../../include/databridge.h
 )
 
 
 add_executable(
   unittest
-    ../src/datalink_connection.cpp
-    ../src/datalink_protocol.cpp
-    ../src/datalink.cpp
-    ../src/databridge.cpp
+    ../../src/datalink_connection.cpp
+    ../../src/datalink_protocol.cpp
+    ../../src/datalink.cpp
+    ../../src/databridge.cpp
     cpp_test_base.cpp
     cpp_test_datalink_connection.cpp
     cpp_test_datalink_protocol.cpp
@@ -49,29 +49,29 @@ add_executable(
 add_executable(
   tst_client
   cpp_client.cpp
-  ../src/datalink_connection.cpp
-  ../src/datalink_protocol.cpp
-  ../src/datalink.cpp
-  ../src/databridge.cpp
+  ../../src/datalink_connection.cpp
+  ../../src/datalink_protocol.cpp
+  ../../src/datalink.cpp
+  ../../src/databridge.cpp
 )
 
 
 add_executable(
   tst_server
   cpp_server.cpp
-  ../src/datalink_connection.cpp
-  ../src/datalink_protocol.cpp
-  ../src/datalink.cpp
-  ../src/databridge.cpp
+  ../../src/datalink_connection.cpp
+  ../../src/datalink_protocol.cpp
+  ../../src/datalink.cpp
+  ../../src/databridge.cpp
 )
 
 add_executable(
   tst_bridge
   cpp_bridge.cpp
-  ../src/datalink_connection.cpp
-  ../src/datalink_protocol.cpp
-  ../src/datalink.cpp
-  ../src/databridge.cpp
+  ../../src/datalink_connection.cpp
+  ../../src/datalink_protocol.cpp
+  ../../src/datalink.cpp
+  ../../src/databridge.cpp
 )
 
 

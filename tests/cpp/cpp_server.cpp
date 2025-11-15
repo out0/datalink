@@ -1,4 +1,4 @@
-#include "../include/datalink.h"
+#include "../../include/datalink.h"
 #include <unistd.h>
 
 #define SIZE 2097100

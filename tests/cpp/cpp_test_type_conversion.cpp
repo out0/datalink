@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <stdlib.h>
-#include "../include/datalink.h"
+#include "../../include/datalink.h"
 
 TEST(TypeConversionTest, TestEncodeUint82)
 {
