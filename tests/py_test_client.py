@@ -1,0 +1,33 @@
+#
+# Testing the datalink using separated process
+#
+import sys
+sys.path.append("..")
+from python.app.Datalink.src.datalink import Datalink
+import time
+import numpy as np
+
+def main ():
+    link = Datalink(host="127.0.0.1", port=21001, timeout=2)
+
+    print ("connecting to the server")
+    while not link.is_connected():
+        time.sleep(0.01)
+
+    while True:
+        msg, _ = link.read()
+        print (f"received data: '{msg}'")
+
+    # while True:
+    #     if not link.is_connected():
+    #         time.sleep(0.01)
+    #         continue
+        
+    #     if link.has_data():
+    #         msg, _ = link.read()
+    #         print (f"received data: '{msg}'")
+    #     time.sleep(0.01)
+
+
+if __name__ == "__main__":
+    main()
