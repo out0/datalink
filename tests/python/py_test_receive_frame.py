@@ -5,28 +5,26 @@ import sys
 from pydatalink import Datalink 
 import time
 import cv2
+import argparse
 
-def main ():
-    link = Datalink(host="127.0.0.1", port=21001, timeout=2)
+def main (port: int):
+    link = Datalink(port=port, timeout=2)
 
-    print ("connecting to the server")
     while not link.is_connected():
         time.sleep(0.01)
+        
+    print ("A client just connected. We will receive the frame")
 
     arr = link.read_uint8_np((400, 400, 3))
+    print (f"Data received with a shape: {arr.shape}")
+
+    print ("Sending the acknowledge")
     link.write("ack")
     cv2.imwrite("received_img.png", arr)
 
-    # while True:
-    #     if not link.is_connected():
-    #         time.sleep(0.01)
-    #         continue
-        
-    #     if link.has_data():
-    #         msg, _ = link.read()
-    #         print (f"received data: '{msg}'")
-    #     time.sleep(0.01)
-
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", "-p", type=int, default=21001, help="datalink port")
+    args = parser.parse_args()
+    main(args.port)

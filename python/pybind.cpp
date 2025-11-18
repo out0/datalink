@@ -2,6 +2,8 @@
 #include <memory>
 #include <cstring>
 #include "../include/datalink.h"
+#include "../include/databridge.h"
+#include "../include/datalink.h"
 
 // #define DEBUG_BIND 1
 
@@ -93,5 +95,32 @@ extern "C"
                 printf("freeing memory at %p\n", address);
 #endif
                 free(address);
+        }
+
+        void *init_bridge_server_server(int in_port, int out_port, float timeout)
+        {
+                return new DataBrigde(in_port, out_port, timeout);
+        }
+
+        void *init_bridge_client_server(char *in_host, int in_port, int out_port, float timeout)
+        {
+                return new DataBrigde(in_host, in_port, out_port, timeout);
+        }
+        void *init_bridge_server_client(int in_port, char *out_host, int out_port, float timeout)
+        {
+                return new DataBrigde(in_port, out_host, out_port, timeout);
+        }
+        void *init_bridge_client_client(char *in_host, int in_port, char *out_host, int out_port, float timeout)
+        {
+                return new DataBrigde(in_host, in_port, out_host, out_port, timeout);
+        }
+
+
+        void destroy_bridge(void *bridge)
+        {
+#ifdef DEBUG_BIND
+                printf("destroying the data bridge %p\n", bridge);
+#endif
+                delete ((DataBrigde *)bridge);
         }
 }
