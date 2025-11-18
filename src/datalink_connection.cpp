@@ -129,8 +129,10 @@ bool DatalinkConnection::openConnection(const char *host, int port)
     if (connect(this->sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1)
     {
         close(this->sock);
+#ifdef DEBUG        
         printf("[datalink] failed to connect to %s, %d\n", host, port);
         perror("[datalink] connect");
+#endif        
         return false;
     }
 

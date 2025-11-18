@@ -106,7 +106,9 @@ bool DatalinkProtocol::updateBuffer(long size)
 
     if (this->lastBuffer->size != size)
     {
+#ifdef DEBUG        
         printf ("updateBuffer() modifying the data buffer from %ld to %ld\n", this->lastBuffer->size, size);
+#endif        
         this->lastBuffer->data = std::make_unique<char[]>(size + 1);
         this->lastBuffer->size = size;
     }
