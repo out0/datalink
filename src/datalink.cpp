@@ -8,7 +8,7 @@
 #include <string.h>
 #include "../include/datalink.h"
 
-//#define DEBUG 1
+#define DEBUG 1
 
 bool Datalink::receiveWaitForDataTimeout(double start, double timeout_s)
 {
@@ -70,17 +70,34 @@ int Datalink::openLink()
 {
     if (host == nullptr)
     {
+#ifdef DEBUG
+        printf("binding to port %d\n", port);
+#endif
         if (this->conn->bindConnection(this->port))
             return WAIT_LISTEN;
 
+#ifdef DEBUG
+        printf("binding to port %d [failed]\n", port);
+#endif
+
+
         return CONNECTION_CLOSED;
     }
+
+    #ifdef DEBUG
+        printf("connecting to %s:%d\n", this->host, this->port);
+    #endif
 
     if (this->conn->openConnection(this->host, this->port))
     {
         this->conn->rstTimeout();
         return CONNECTION_OPENED;
     }
+
+    #ifdef DEBUG
+        printf("connecting to %s:%d [failed]\n", this->host, this->port);
+    #endif
+
 
     return CONNECTION_CLOSED;
 }
@@ -97,7 +114,8 @@ int Datalink::waitListen()
 
 int Datalink::dataTransfer()
 {
-    if (conn->checkTimeout()) {
+    if (conn->checkTimeout())
+    {
         return terminateSession();
     }
 
@@ -112,7 +130,7 @@ int Datalink::dataTransfer()
 int Datalink::terminateSession()
 {
 #ifdef DEBUG
-    printf ("terminate session called\n");
+    printf("terminate session called\n");
 #endif
     if (state == CONNECTION_OPENED)
     {
@@ -131,7 +149,7 @@ bool Datalink::hasData()
 bool Datalink::isReady()
 {
 #ifdef DEBUG
-    printf("[datalink] isReady() called, state = %d\n", this->state);
+    //printf("[datalink] isReady() called, state = %d\n", this->state);
 #endif
     return this->state == CONNECTION_OPENED;
 }
@@ -161,10 +179,10 @@ std::shared_ptr<DataLinkResult<char>> Datalink::receiveData(double timeout_s)
 
         auto buff = this->protocol->releaseBuffer();
 
-        if (buff != nullptr) {
+        if (buff != nullptr)
+        {
             return buff;
         }
-
     }
     return nullptr;
 }
@@ -181,7 +199,7 @@ std::shared_ptr<DataLinkResult<float>> Datalink::receiveDataF(double timeout_s)
         return nullptr;
     }
 
-    char * buffer = rawData->data.get();
+    char *buffer = rawData->data.get();
     auto res = std::make_shared<DataLinkResult<float>>();
     res->size = 0;
     res->valid = true;
@@ -189,8 +207,10 @@ std::shared_ptr<DataLinkResult<float>> Datalink::receiveDataF(double timeout_s)
 
     floatp p;
     res->size = 0;
-    for (long i = 0; i < rawData->size; ) {
-        for (int k = 0; k < sizeof(float); k++, i++) {
+    for (long i = 0; i < rawData->size;)
+    {
+        for (int k = 0; k < sizeof(float); k++, i++)
+        {
             p.bval[k] = buffer[i];
         }
         res->data[res->size] = p.fval;

@@ -67,24 +67,32 @@ extern "C"
                 return ((Datalink *)link)->isReady();
         }
 
-        char *read_str_link(void *link, long *size)
+        char *read_str_link(void *link, long *size, float no_data_timeout_s)
         {
                 auto ptr = ((Datalink *)link);
 #ifdef DEBUG_BIND
                 printf("reading string from the Datalink %p\n", link);
 #endif
-                auto res = ptr->receiveData();
+                auto res = ptr->receiveData(no_data_timeout_s);
+                if (res == nullptr) {
+                        *size = 0;
+                        return nullptr;
+                }
                 *size = res->size;
                 return res->data.release();
         }
 
-        float *read_np_float_link(void *link, long *size)
+        float *read_np_float_link(void *link, long *size, float no_data_timeout_s)
         {
 #ifdef DEBUG_BIND
                 printf("reading float array from the Datalink %p\n", link);
 #endif
                 auto ptr = ((Datalink *)link);
-                auto res = ptr->receiveDataF();
+                auto res = ptr->receiveDataF(no_data_timeout_s);
+                if (res == nullptr) {
+                        *size = 0;
+                        return nullptr;
+                }
                 *size = res->size;
                 return res->data.release();
         }
