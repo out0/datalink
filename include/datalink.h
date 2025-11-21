@@ -64,14 +64,14 @@ class DatalinkConnection
 {
     int sock;
     long timeoutStart;
-    float noDataTimeout_s;
+    float noDataTimeout_ms;
     bool isOpened;
 
 private:
     bool checkConnectionLost(int socketResult, int errorCode);
 
 public:
-    DatalinkConnection(float no_data_timeout_s);
+    DatalinkConnection(float no_data_timeout_ms);
     ~DatalinkConnection();
 
     void rstTimeout();

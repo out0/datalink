@@ -3,7 +3,7 @@
 #include <unistd.h>
 
 #define SIZE 209710000
-#define TIMEOUT 2
+#define TIMEOUT 2000
 int main()
 {
     auto link = new Datalink("127.0.0.1", 21000, TIMEOUT);

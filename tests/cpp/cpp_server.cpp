@@ -3,7 +3,7 @@
 
 #define SIZE 209710
 #define PORT 21000
-#define TIMEOUT 2
+#define TIMEOUT 2000
 
 int main()
 {

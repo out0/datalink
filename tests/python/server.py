@@ -6,7 +6,7 @@ import time
 import numpy as np
 
 def main ():
-    link = Datalink(port=20000, timeout=5)
+    link = Datalink(port=20000, timeout_ms=2000)
 
     SRV_MSG = "B" * ((1024 ** 2) * 2)
     SRV_SZ = len(SRV_MSG)

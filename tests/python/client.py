@@ -9,7 +9,7 @@ SRV_SZ = len(SRV_MSG)
 
 
 def main ():
-    link = Datalink(host="127.0.0.1", port=20000, timeout=5)
+    link = Datalink(host="127.0.0.1", port=20000, timeout_ms=3000)
 
     while True:
         print ("connecting to the server")

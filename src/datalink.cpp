@@ -17,9 +17,9 @@ bool Datalink::receiveWaitForDataTimeout(double start, double timeout_s)
     return DatalinkCommon::timeNow() - start > timeout_s;
 }
 
-Datalink::Datalink(const char *host, int port, float no_data_timeout_s)
+Datalink::Datalink(const char *host, int port, float no_data_timeout_ms)
 {
-    this->conn = std::make_shared<DatalinkConnection>(no_data_timeout_s);
+    this->conn = std::make_shared<DatalinkConnection>(no_data_timeout_ms);
     this->protocol = std::make_unique<DatalinkProtocol>(this->conn);
     this->host = strdup(host);
     this->port = port;
@@ -27,9 +27,9 @@ Datalink::Datalink(const char *host, int port, float no_data_timeout_s)
     this->state = CONNECTION_CLOSED;
     this->linkRunThread = std::make_unique<std::thread>(&Datalink::linkRun, this);
 }
-Datalink::Datalink(int port, float no_data_timeout_s)
+Datalink::Datalink(int port, float no_data_timeout_ms)
 {
-    this->conn = std::make_shared<DatalinkConnection>(no_data_timeout_s);
+    this->conn = std::make_shared<DatalinkConnection>(no_data_timeout_ms);
     this->protocol = std::make_unique<DatalinkProtocol>(this->conn);
     this->host = nullptr;
     this->port = port;

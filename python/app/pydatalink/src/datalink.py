@@ -10,7 +10,7 @@ class Datalink:
     link: ctypes.c_void_p
     _timeout: float
 
-    def __init__(self, host: str = None, port: int = -1, timeout: float = -1) -> None:
+    def __init__(self, host: str = None, port: int = -1, timeout_ms: float = -1) -> None:
         if port <= 0:
             raise Exception("port should be defined")
            
@@ -18,12 +18,12 @@ class Datalink:
 
         if host is None:
             self.link = Datalink.lib.init_server(
-                ctypes.c_int(port), ctypes.c_float(timeout))
+                ctypes.c_int(port), ctypes.c_float(timeout_ms))
         else:
             self.link = Datalink.lib.init_client(ctypes.c_char_p(
-                host.encode('utf-8')), ctypes.c_int(port), ctypes.c_float(timeout))
+                host.encode('utf-8')), ctypes.c_int(port), ctypes.c_float(timeout_ms))
             
-        self._timeout = timeout
+        self._timeout = timeout_ms
 
 
     @classmethod

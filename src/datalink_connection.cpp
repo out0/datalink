@@ -50,9 +50,9 @@ bool DatalinkConnection::checkConnectionLost(int socketResult, int errorCode)
     }
 }
 
-DatalinkConnection::DatalinkConnection(float no_data_timeout_s)
+DatalinkConnection::DatalinkConnection(float no_data_timeout_ms)
 {
-    this->noDataTimeout_s = no_data_timeout_s;
+    this->noDataTimeout_ms = no_data_timeout_ms;
     this->timeoutStart = -1;
 }
 DatalinkConnection::~DatalinkConnection()
@@ -84,7 +84,7 @@ bool DatalinkConnection::bindConnection(int port)
 
     address.sin_family = AF_INET;         // Set address family to AF_INET (IPv4)
     address.sin_addr.s_addr = INADDR_ANY; // Accept connections from any IP
-    address.sin_port = htons(port);       // Set port to 8080 with proper byte order
+    address.sin_port = htons(port);       
 
     if (bind(sock, (struct sockaddr *)&address, sizeof(address)) < 0)
     {
@@ -94,10 +94,14 @@ bool DatalinkConnection::bindConnection(int port)
 
     if (listen(sock, 1) < 0)
         return false;
+    else printf("sock listening on %d\n", port);
 
     return true;
 }
 
+#define NEW_FN 1
+
+#ifdef NEW_FN
 bool DatalinkConnection::openConnection(const char *host, int port)
 {
     this->isOpened = false;
@@ -155,9 +159,8 @@ bool DatalinkConnection::openConnection(const char *host, int port)
                     rc = -1;
                     break;
                 }
-                struct timespec deadline = {.tv_sec = now.tv_sec + static_cast<long>(this->noDataTimeout_s),
-                                            .tv_nsec = now.tv_nsec};
-                                            //.tv_nsec = now.tv_nsec + static_cast<long>(this->noDataTimeout_s * 1000000000l)};
+                struct timespec deadline = {.tv_sec = now.tv_sec,
+                                            .tv_nsec = now.tv_nsec + static_cast<long>(this->noDataTimeout_ms * 1000000l)};
                 // Wait for the connection to complete.
                 do
                 {
@@ -202,19 +205,19 @@ bool DatalinkConnection::openConnection(const char *host, int port)
     // Restore original O_NONBLOCK state
     if (fcntl(this->sock, F_SETFL, sockfd_flags_before) < 0)
         return -1;
-    
+
     // Success
 
     struct timeval tv;
-    tv.tv_sec = noDataTimeout_s;
-    tv.tv_usec = 0;
+    tv.tv_sec = 0;
+    tv.tv_usec = static_cast<long>(this->noDataTimeout_ms * 1000000l);
     setsockopt(this->sock, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv));
 
     this->isOpened = true;
     return true;
 }
+#else
 
-/*
 bool DatalinkConnection::openConnection(const char *host, int port)
 {
     this->isOpened = false;
@@ -262,15 +265,15 @@ bool DatalinkConnection::openConnection(const char *host, int port)
 #endif
 
     struct timeval tv;
-    tv.tv_sec = noDataTimeout_s;
+    tv.tv_sec = 2;
     tv.tv_usec = 0;
     setsockopt(this->sock, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv));
 
     this->isOpened = true;
     return true;
 }
-*/
 
+#endif
 bool DatalinkConnection::socketListen()
 {
     this->isOpened = false;
@@ -281,7 +284,7 @@ bool DatalinkConnection::socketListen()
 
     timeval time;
     time.tv_sec = 0;
-    time.tv_usec = 5000; // 1MS
+    time.tv_usec = 1000000;
 
     fd_set master;
     FD_ZERO(&master);
@@ -312,8 +315,8 @@ bool DatalinkConnection::socketListen()
 #endif
 
     struct timeval tv;
-    tv.tv_sec = 1;
-    tv.tv_usec = 0;
+    tv.tv_sec = 0;
+    tv.tv_usec = static_cast<long>(this->noDataTimeout_ms * 1000000l);
     setsockopt(connSock, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv));
 
     this->sock = connSock;
@@ -392,7 +395,7 @@ void DatalinkConnection::rstTimeout()
 }
 bool DatalinkConnection::checkTimeout()
 {
-    if (this->noDataTimeout_s <= 0)
+    if (this->noDataTimeout_ms <= 0)
         return false;
 
     if (timeoutStart <= 0)
@@ -400,7 +403,7 @@ bool DatalinkConnection::checkTimeout()
         timeoutStart = DatalinkCommon::timeNow();
         return false;
     }
-    if (DatalinkCommon::timeNow() - timeoutStart > noDataTimeout_s)
+    if (1000 * (DatalinkCommon::timeNow() - timeoutStart) > noDataTimeout_ms)
     {
 #ifdef DEBUG
         printf("[datalink] TIMEOUT\n");
