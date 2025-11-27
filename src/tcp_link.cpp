@@ -421,6 +421,7 @@ int TCPLink::_acceptIncommingConnection()
     std::memset(&client_address, 0, cli_addr_size);
 
     bool connected = false;
+     _link_ready = false;
     while (_is_running && !connected)
     {
         _connSockFd = accept(_listenSockFd, (struct sockaddr *)&client_address, (socklen_t *)&cli_addr_size);
