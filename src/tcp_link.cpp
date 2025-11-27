@@ -570,7 +570,7 @@ int TCPLink::_waitConnectionToServerIsCompleted()
 
     struct timeval time = set_timeout_ms(_timeout_ms);
     setsockopt(_connSockFd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&time, sizeof(time));
-
+    _rstTimeout();
     _link_ready = true;
 
 #ifdef DEBUG

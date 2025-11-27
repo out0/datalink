@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 
     printf("Data client\n");
 
-    TCPLink link("127.0.0.1", 20000, 100);
+    TCPLink link("127.0.0.1", 20000, 5000);
 
     int j = 9;
     while (j >= 0)
