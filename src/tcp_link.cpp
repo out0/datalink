@@ -706,15 +706,21 @@ int TCPLink::_dataTransfer()
 
     if (_checkTimeout())
     {
+#ifdef DEBUG        
         printf("timeout in _dataTransfer\n");
         return STATE_CONNECTION_CLOSING;
+#endif        
     }
 
     if (raw.size() > 0)
     {
+#ifdef DEBUG        
         printf("recv valid data, acquiring buffer\n");
+#endif        
         std::lock_guard<std::mutex> guard(_incomming_data_mtx);
+#ifdef DEBUG                
         printf("writing the message to the queue\n");
+#endif        
         _incommingMessages.push(raw);
         _rstTimeout();
     }
