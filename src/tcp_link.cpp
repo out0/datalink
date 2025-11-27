@@ -60,7 +60,6 @@ bool check_connection_lost(int socketResult, int errorCode)
     }
 }
 
-
 inline long min(long a, long b)
 {
     return a < b ? a : b;
@@ -342,7 +341,8 @@ char *build_default_footer(char *footer)
 
 void TCPLink::_loop()
 {
-    if (_write_with_invalid_state) {
+    if (_write_with_invalid_state)
+    {
         _state = STATE_CONNECTION_CLOSING;
         _write_with_invalid_state = false;
     }
@@ -706,21 +706,21 @@ int TCPLink::_dataTransfer()
 
     if (_checkTimeout())
     {
-#ifdef DEBUG        
+#ifdef DEBUG
         printf("timeout in _dataTransfer\n");
+#endif
         return STATE_CONNECTION_CLOSING;
-#endif        
     }
 
     if (raw.size() > 0)
     {
-#ifdef DEBUG        
+#ifdef DEBUG
         printf("recv valid data, acquiring buffer\n");
-#endif        
+#endif
         std::lock_guard<std::mutex> guard(_incomming_data_mtx);
-#ifdef DEBUG                
+#ifdef DEBUG
         printf("writing the message to the queue\n");
-#endif        
+#endif
         _incommingMessages.push(raw);
         _rstTimeout();
     }
