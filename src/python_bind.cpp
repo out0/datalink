@@ -4,70 +4,62 @@
 #include "../include/datalink.h"
 #include "../include/tcplink.h"
 
-//#define DEBUG_BIND 1
+// #define DEBUG_BIND 1
 
 extern "C"
 {
-    void *init_tcp_server(int port, float timeout)
-    {
-        auto link = new TCPLink(port, timeout);
+        void *init_tcp_server(int port, float timeout)
+        {
+                auto link = new TCPLink(port, timeout);
 #ifdef DEBUG_BIND
-        printf("creating a Datalink server %p with port: %d\n", link, port);
+                printf("creating a Datalink server %p with port: %d\n", link, port);
 #endif
-        return link;
-    }
+                return link;
+        }
 
-    void *init_tcp_client(char *host, int port, float timeout)
-    {
-        auto link = new TCPLink(host, port, timeout);
+        void *init_tcp_client(char *host, int port, float timeout)
+        {
+                auto link = new TCPLink(host, port, timeout);
 #ifdef DEBUG_BIND
-        printf("creating a Datalink client %p to host %s and port: %d\n", link, host, port);
+                printf("creating a Datalink client %p to host %s and port: %d\n", link, host, port);
 #endif
-        return link;
-    }
+                return link;
+        }
 
-    void destroy_tcp_link(void *link)
-    {
+        void destroy_tcp_link(void *link)
+        {
 #ifdef DEBUG_BIND
-        printf("destroying the Datalink %p\n", link);
+                printf("destroying the Datalink %p\n", link);
 #endif
-        delete ((TCPLink *)link);
-    }
+                delete ((TCPLink *)link);
+        }
 
-    bool write_str_link(void *link, char *data, long size)
-    {
+        bool write_str_link(void *link, char *data, long size)
+        {
 #ifdef DEBUG_BIND
-        printf("writing string to the Datalink %p size: %ld\n", link, size);
+                printf("writing string to the Datalink %p size: %ld\n", link, size);
 #endif
-        return ((TCPLink *)link)->write(data, size);
-    }
+                return ((TCPLink *)link)->write(data, size);
+        }
 
-    bool is_ready(void *link)
-    {
-        return ((TCPLink *)link)->isReady();
-    }
+        bool is_ready(void *link)
+        {
+                return ((TCPLink *)link)->isReady();
+        }
 
-    char *read_str_link(void *link, long *size)
-    {
-        auto ptr = ((TCPLink *)link);
-#ifdef DEBUG_BIND
-        printf("reading string from the Datalink %p\n", link);
-#endif
-        auto res = ptr->readMessage();
-        *size = res.size();
-        return nullptr;
-    }
+        char *next_message(void *link, long *size)
+        {
+                auto ptr = ((TCPLink *)link);
+                return ptr->readMessage(size);
+        }
+        void free_memory(char *msg)
+        {
+                delete[] msg;
+        }
 
-    void free_memory(void *address)
-    {
-#ifdef DEBUG_BIND
-        printf("freeing memory at %p\n", address);
-#endif
-        free(address);
-    }
-
-    bool has_data(void *link) {
-        auto ptr = ((TCPLink *)link);
-        return ptr->hasData();
-    }
+        bool has_data(void *link)
+        {
+                auto ptr = ((TCPLink *)link);
+                return ptr->hasData();
+        }
 }

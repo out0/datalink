@@ -40,11 +40,6 @@ typedef union uint8
     char bval;
 } uint8;
 
-typedef struct datalink_raw {
-    char *data;
-    long size;
-} datalink_raw;
-
 class Datalink
 {
 

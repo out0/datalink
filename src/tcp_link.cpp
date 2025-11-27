@@ -623,6 +623,7 @@ TCPLink::TCPLink(const char *server, int port, float no_data_timeout_ms)
     build_default_footer(_default_footer);
     _link_ready = false;
     _is_running = true;
+    _last_raw_buffer_size = -1;
     _linkRunThread = std::make_unique<std::thread>(&TCPLink::_linkRun, this);
 }
 
@@ -647,6 +648,7 @@ TCPLink::TCPLink(char *server, int port, float no_data_timeout_ms)
     build_default_footer(_default_footer);
     _link_ready = false;
     _is_running = true;
+    _last_raw_buffer_size = -1;
     _linkRunThread = std::make_unique<std::thread>(&TCPLink::_linkRun, this);
 }
 TCPLink::TCPLink(int port, float no_data_timeout_ms)
@@ -661,6 +663,7 @@ TCPLink::TCPLink(int port, float no_data_timeout_ms)
     build_default_footer(_default_footer);
     _link_ready = false;
     _is_running = true;
+    _last_raw_buffer_size = -1;
     _linkRunThread = std::make_unique<std::thread>(&TCPLink::_linkRun, this);
 }
 TCPLink::~TCPLink()
@@ -726,4 +729,22 @@ int TCPLink::_dataTransfer()
     }
 
     return STATE_CONNECTION_OPENED;
+}
+char *TCPLink::readMessage(long *size) {
+    if (!_link_ready || !hasData()) {
+        *size = 0;
+        return nullptr;
+    }
+    
+    auto msg = _incommingMessages.front();
+
+    if (_last_raw_buffer_size != static_cast<long>(msg.size())) {
+        // allocate shared buffer for array with array deleter
+        _last_raw_buffer = std::shared_ptr<char>(new char[msg.size()], std::default_delete<char[]>());
+        _last_raw_buffer_size = static_cast<long>(msg.size());
+    }
+
+    *size = msg.size();
+    memcpy(_last_raw_buffer.get(), &msg[0], *size);
+    return _last_raw_buffer.get();
 }

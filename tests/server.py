@@ -1,3 +1,4 @@
+#! /usr/bin/python3 
 #
 # Testing the datalink using separated process
 #
@@ -5,7 +6,9 @@ from pydatalink import Datalink
 import time
 
 def main ():
-    link = Datalink(port=20000, timeout=-1)
+    link = Datalink(port=20000, timeout=100)
+
+    payload = "A" * (1024 * 1024)
 
     pos = 1
     while True:
@@ -14,12 +17,13 @@ def main ():
             while not link.is_ready():
                 time.sleep(0.01)
         
-        # print (f"sending {pos}")
-        # link.write(f"data #{pos}")
-        # pos += 1
-        _, sz = link.read()
-        print (f"received: {sz} bytes")
-        time.sleep(0.5)
+        print (f"sending msg #{pos} - {len(payload)} bytes")
+        link.write(payload)
+        pos += 1
+        
+        # _, sz = link.read()
+        # print (f"received: {sz} bytes")
+        # time.sleep(0.5)
 
 
 if __name__ == "__main__":

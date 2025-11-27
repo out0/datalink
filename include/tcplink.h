@@ -50,6 +50,10 @@ private:
     std::vector<char> _read_raw();
     std::mutex _incomming_data_mtx;
     
+    /// Python data share
+    std::shared_ptr<char> _last_raw_buffer;
+    long _last_raw_buffer_size;
+
 
 public:
     TCPLink(const char *server, int port, float no_data_timeout_ms = -1);
@@ -60,6 +64,10 @@ public:
     bool isReady();
     bool write(const char *payload, long payload_size);
     bool hasData();
+
     std::vector<char> readMessage();
+    char *readMessage(long *size);
+
+    
     
 };

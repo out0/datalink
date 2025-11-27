@@ -48,15 +48,13 @@ class Datalink:
         Datalink.lib.is_ready.restype = ctypes.c_bool
         Datalink.lib.is_ready.argtypes = [ctypes.c_void_p]
 
-        # ctypes.POINTER(ctypes.c_char_p)
-        Datalink.lib.read_str_link.restype = ctypes.POINTER(ctypes.c_char_p)
-        Datalink.lib.read_str_link.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_long)]
 
-        # lib.read_np_link.restype = ctypes.POINTER(ctypes.c_float)
-        # lib.read_np_link.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_long)]
+        Datalink.lib.next_message.restype = ctypes.POINTER(ctypes.c_char_p)
+        Datalink.lib.next_message.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_long)]
 
         Datalink.lib.free_memory.argtypes = [ctypes.c_void_p]
         Datalink.lib.free_memory.restype = None
+
 
         Datalink.lib.has_data.restype = ctypes.c_bool
         Datalink.lib.has_data.argtypes = [ctypes.c_void_p]
@@ -75,7 +73,10 @@ class Datalink:
 
     def read(self) -> tuple[str, int]:
         size = ctypes.c_long(0)
-        result_ptr = Datalink.lib.read_str_link(self.link, ctypes.byref(size))
+        result_ptr = Datalink.lib.next_message(self.link, ctypes.byref(size))
+        if size == 0:
+            return "", 0
+        
         data: str = None
         try:
             data = ctypes.cast(
@@ -83,7 +84,7 @@ class Datalink:
         except:
             data = ""
 
-        Datalink.lib.free(result_ptr)
+        #Datalink.lib.free_memory(result_ptr)
         return data, size.value
 
     def has_data(self) -> bool:
