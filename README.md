@@ -79,9 +79,6 @@ Client example in Python (receiving as much data as possible):
 ```python
 
     link = Datalink(host="127.0.0.1", port=20000, timeout=100)
-    len_payload = 10 * 1024 * 1024
-    payload = "A" * len_payload  # 10 * 1024 * 1024 bytes
-    print(f"generated payload of {len(payload)} bytes")
 
     while True:
         if not link.is_ready():
