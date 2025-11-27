@@ -12,6 +12,7 @@
 
 #include <queue>
 #include <vector>
+#include <sys/select.h>
 
 class TCPLink {
 private:
@@ -20,6 +21,7 @@ private:
     int _state;
     int _listenSockFd;
     int _connSockFd;
+    
     double _timeoutStart;
     double _timeout_ms;
     char _default_header[HEADER_SIZE + 1];
@@ -28,6 +30,7 @@ private:
     char _read_footer[FOOTER_SIZE + 1];
     bool _link_ready;
     bool _is_running;
+    bool _write_with_invalid_state;
     std::unique_ptr<std::thread> _linkRunThread;
     std::queue<std::vector<char>> _incommingMessages;
 

@@ -53,9 +53,9 @@ extern "C"
 #ifdef DEBUG_BIND
         printf("reading string from the Datalink %p\n", link);
 #endif
-        auto res = ptr->readRawMessage();
-        *size = res.size;
-        return res.data;
+        auto res = ptr->readMessage();
+        *size = res.size();
+        return nullptr;
     }
 
     void free_memory(void *address)

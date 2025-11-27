@@ -26,41 +26,6 @@
 
 extern timeval set_timeout_ms(double timeout_ms);
 
-bool check_connection_lost(int socketResult, int errorCode)
-{
-    if (socketResult >= 0)
-        return false;
-
-    switch (errorCode)
-    {
-    case 9:
-    case 32:  // broken pipe
-    case 50:  // network is down
-    case 51:  // network unreachable
-    case 52:  // network dropped connection
-    case 53:  // aborted
-    case 54:  // connection reset by peer
-    case 104: // connection reset by peer
-    case 111: // connection refused
-#ifdef DEBUG
-        printf("[datalink] connection lost code: %d\n", errorCode);
-        perror("reason\n");
-#endif
-        return true;
-    case 11:
-        // #ifdef DEBUG
-        //         printf("[datalink] connection lost code: %d\n", errorCode);
-        //         perror("reason\n");
-        // #endif
-        return false;
-    default:
-        printf("[datalink] unknown error code: %d\n", errorCode);
-        perror("reason\n");
-        return true;
-    }
-}
-
-
 inline long min(long a, long b)
 {
     return a < b ? a : b;
@@ -76,7 +41,7 @@ inline void wait_ms(int ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
-int write_header(int sockfd, char *default_header, long payload_size)
+bool write_header(int sockfd, char *default_header, long payload_size)
 {
     longp p;
     p.val = payload_size;
@@ -95,14 +60,9 @@ int write_header(int sockfd, char *default_header, long payload_size)
 
     int i = send(sockfd, default_header, HEADER_SIZE, MSG_NOSIGNAL);
 
-    if (check_connection_lost(i, errno))
-    {
-        return -2;
-    }
-
-    return (i == HEADER_SIZE) ? 0 : -1;
+    return i == HEADER_SIZE;
 }
-int write_footer(int sockfd, char *default_footer)
+bool write_footer(int sockfd, char *default_footer)
 {
     // printf ("sent footer: ");
     // for (int i = 0; i < FOOTER_SIZE; i++)
@@ -111,12 +71,39 @@ int write_footer(int sockfd, char *default_footer)
     // }
     // printf ("\n");
 
-    int i = send(sockfd, default_footer, FOOTER_SIZE, MSG_NOSIGNAL);
-    if (check_connection_lost(i, errno))
+    return send(sockfd, default_footer, FOOTER_SIZE, MSG_NOSIGNAL) == FOOTER_SIZE;
+}
+bool check_connection_lost(int socketResult, int errorCode)
+{
+    if (socketResult >= 0)
+        return false;
+
+    switch (errorCode)
     {
-        return -2;
+    case 9:
+    case 32:  // broken pipe
+    case 50:  // network is down
+    case 51:  // network unreachable
+    case 52:  // network dropped connection
+    case 53:  // aborted
+    case 54:  // connection reset by peer
+    case 104: // connection reset by peer
+#ifdef DEBUG
+        printf("[datalink] connection lost code: %d\n", errorCode);
+        perror("reason\n");
+#endif
+        return true;
+    case 11:
+        // #ifdef DEBUG
+        //         printf("[datalink] connection lost code: %d\n", errorCode);
+        //         perror("reason\n");
+        // #endif
+        return false;
+    default:
+        printf("[datalink] unknown error code: %d\n", errorCode);
+        perror("reason\n");
+        return true;
     }
-    return (i == FOOTER_SIZE) ? 0 : -1;
 }
 bool check_repeat_byte(char *buffer, int startPos, int count, int byte)
 {
@@ -138,7 +125,7 @@ bool TCPLink::_readFromSocket(int sockfd, char *buffer, long size)
     {
         max_package_size = min(size - read_size, DATALINK_MRU);
 
-        int partialSize = recv(sockfd, buffer + read_size, max_package_size, MSG_DONTWAIT);
+        int partialSize = read(sockfd, buffer + read_size, max_package_size);
 
         if (check_connection_lost(partialSize, errno))
             return false;
@@ -150,9 +137,8 @@ bool TCPLink::_readFromSocket(int sockfd, char *buffer, long size)
         {
             if (errno == EAGAIN)
                 continue;
-
             perror("read");
-            printf("errno = %d\n", errno);
+            printf ("errno = %d\n", errno);
             return STATE_CONNECTION_CLOSING;
             // #ifdef DEBUG_DATA
             //             printf("read from socket returned -1 data for partial read\n");
@@ -258,12 +244,7 @@ bool TCPLink::write(const char *payload, long payload_size)
 
     long transmited_size = 0;
 
-    int write_status = write_header(_connSockFd, _default_header, payload_size);
-
-    if (write_status == -2)
-        _write_with_invalid_state = true;
-
-    if (write_status == -1)
+    if (!write_header(_connSockFd, _default_header, payload_size))
     {
         fprintf(stderr, "!! [datalink error] unable to send message header\n");
         return false;
@@ -283,19 +264,12 @@ bool TCPLink::write(const char *payload, long payload_size)
         transmited_size += partialSize;
     }
 
-    write_status = write_footer(_connSockFd, _default_footer);
-
-    if (write_status == -2)
-        _write_with_invalid_state = true;
-
-    if (write_status == -1)
+    if (!write_footer(_connSockFd, _default_footer))
     {
         fprintf(stderr, "!! [datalink error] unable to send message footer\n");
         return false;
     }
 
-    _rstTimeout();
-    _write_with_invalid_state = false;
     return true;
 }
 std::vector<char> TCPLink::_read_raw()
@@ -342,11 +316,6 @@ char *build_default_footer(char *footer)
 
 void TCPLink::_loop()
 {
-    if (_write_with_invalid_state) {
-        _state = STATE_CONNECTION_CLOSING;
-        _write_with_invalid_state = false;
-    }
-
     switch (_state)
     {
     case STATE_CONNECTION_CLOSED:
@@ -362,16 +331,8 @@ void TCPLink::_loop()
         _state = _waitConnectionToServerIsCompleted();
         break;
     case STATE_CONNECTION_CLOSING:
-        _link_ready = false;
         close(_connSockFd);
-        if (_host == nullptr)
-        {
-            _state = STATE_WAIT_LISTEN;
-        }
-        else
-        {
-            _state = STATE_CONNECTION_CLOSED;
-        }
+        _state = STATE_CONNECTION_CLOSED;
         break;
     default:
         _state = STATE_CONNECTION_CLOSED;
@@ -397,14 +358,13 @@ int TCPLink::_bindPort()
     if (_listenSockFd < 0)
     {
         perror("[datalink] socket");
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
 
     if (setsockopt(_listenSockFd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
     {
         perror("[datalink] setsockopt"); // Print error if setting socket options fails
-        close(_listenSockFd);
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
 
     address.sin_family = AF_INET;         // Set address family to AF_INET (IPv4)
@@ -416,22 +376,17 @@ int TCPLink::_bindPort()
     if (flags == -1)
     {
         // Error handling for fcntl(F_GETFL)
-        close(_listenSockFd);
-        return STATE_CONNECTION_CLOSED;
     }
     if (fcntl(_listenSockFd, F_SETFL, flags | O_NONBLOCK) == -1)
     {
         // Error handling for fcntl(F_SETFL)
-        close(_listenSockFd);
-        return STATE_CONNECTION_CLOSED;
     }
 #endif
 
     if (bind(_listenSockFd, (struct sockaddr *)&address, sizeof(address)) < 0)
     {
         perror("[datalink] bind failed");
-        close(_listenSockFd);
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
 
     return STATE_WAIT_LISTEN;
@@ -447,34 +402,52 @@ int TCPLink::_acceptIncommingConnection()
     if (listen(_listenSockFd, 10) < 0)
         return false;
 
+    // timeval time = set_timeout_ms(_timeout_ms);
+
+    // fd_set master;
+    // FD_ZERO(&master);
+    // FD_SET(_listenSockFd, &master);
+
+    // if (select(0, &master, NULL, NULL, &time) == -1)
+    // {
+    //     close(_listenSockFd);
+    //     return STATE_CONNECTION_CLOSING;
+    // }
+
+    // if (!FD_ISSET(_listenSockFd, &master))
+    // {
+    //     close(_listenSockFd);
+    //     return STATE_CONNECTION_CLOSING;
+    // }
+
     struct sockaddr_in client_address;
     socklen_t cli_addr_size = sizeof(client_address);
     std::memset(&client_address, 0, cli_addr_size);
 
     bool connected = false;
-    _link_ready = false;
-
+     _link_ready = false;
     while (_is_running && !connected)
     {
         _connSockFd = accept(_listenSockFd, (struct sockaddr *)&client_address, (socklen_t *)&cli_addr_size);
 
         if (_connSockFd >= 0)
             connected = true;
-        else
-            wait_ms(1);
     }
-
-    _link_ready = true;
-    _rstTimeout();
 
 #ifdef DEBUG
     printf("Accept incoming: client connected\n");
 #endif
 
     if (!_is_running)
-        return STATE_CONNECTION_CLOSED;
+    {
+        return STATE_CONNECTION_CLOSING;
+    }
 
+    _link_ready = true;
     return STATE_CONNECTION_OPENED;
+
+    // FD_SET(connSock, &master); // add to the file descriptor
+    // close(sock);
 }
 
 int asyncTCPConnectionSucceed(int sockfd)
@@ -517,7 +490,7 @@ int TCPLink::_openConnection()
     if (_connSockFd < 0)
     {
         perror("[datalink] socket");
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
 
     struct hostent *server_info = gethostbyname(_host);
@@ -526,7 +499,7 @@ int TCPLink::_openConnection()
         close(_connSockFd);
         printf("[datalink] resolve hostname returned empty information for host %s\n", _host);
         perror("[datalink] reason");
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
 
     struct sockaddr_in server_addr;
@@ -542,38 +515,54 @@ int TCPLink::_openConnection()
     {
         perror("[datalink] fcntl F_GETFL");
         close(_connSockFd);
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
     if (fcntl(_connSockFd, F_SETFL, flags | O_NONBLOCK) == -1)
     {
         perror("[datalink] fcntl F_SETFL O_NONBLOCK");
         close(_connSockFd);
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
 #endif
     // Connect to the server
-    while (_is_running)
+    bool connected = false;
+    while (_is_running && !connected)
     {
         int ret = connect(_connSockFd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-        if (ret >= 0)
+        if (ret == -1)
         {
-            _link_ready = true;
-            return STATE_CONNECTION_OPENED;
-        }
-        if (errno == EINPROGRESS)
+            if (errno != EINPROGRESS)
+            {
+                perror("[datalink] connect");
+                return STATE_CONNECTION_CLOSING;
+            }
+
             return STATE_WAIT_CONNECTION_COMPLETION;
+        }
+        else
+        {
+            connected = true;
+        }
+        // close(_connSockFd);
 
 #ifdef DEBUG
         printf("[datalink] failed to connect to %s, %d\n", host, port);
         perror("[datalink] connect");
 #endif
-        if (_checkTimeout())
-            return STATE_CONNECTION_CLOSING;
-
-        wait_ms(1);
     }
 
-    return STATE_CONNECTION_CLOSING;
+#ifdef DEBUG
+    printf("[datalink] connected\n");
+#endif
+
+    // struct timeval time = set_timeout_ms(_timeout_ms);
+    // setsockopt(_connSockFd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&time, sizeof(time));
+
+    _link_ready = true;
+#ifdef DEBUG
+    printf("open connection: connected\n");
+#endif
+    return STATE_CONNECTION_OPENED;
 }
 
 int TCPLink::_waitConnectionToServerIsCompleted()
@@ -581,7 +570,6 @@ int TCPLink::_waitConnectionToServerIsCompleted()
     int err = asyncTCPConnectionSucceed(_connSockFd);
     if (err == -1)
         return STATE_WAIT_CONNECTION_COMPLETION;
-
     if (err == -3)
         return STATE_CONNECTION_CLOSING;
 
@@ -706,15 +694,16 @@ int TCPLink::_dataTransfer()
 
     if (_checkTimeout())
     {
-        printf("timeout in _dataTransfer\n");
+        if (_host == nullptr)
+            return STATE_WAIT_LISTEN;
         return STATE_CONNECTION_CLOSING;
     }
 
     if (raw.size() > 0)
     {
-        printf("recv valid data, acquiring buffer\n");
+        // printf("recv valid data, acquiring buffer\n");
         std::lock_guard<std::mutex> guard(_incomming_data_mtx);
-        printf("writing the message to the queue\n");
+        // printf("writing the message to the queue\n");
         _incommingMessages.push(raw);
         _rstTimeout();
     }

@@ -13,7 +13,7 @@ int main(int argc, char **argv)
     for (int i = 0; i < SIZE; i++)
         payload[i] = i % 1024;
 
-    TCPLink link(20000, 5000);
+    TCPLink link(20000, 100);
 
     while (true)
     {
@@ -29,6 +29,6 @@ int main(int argc, char **argv)
         
         //printf ("hit enter\n");
         //std::cin.get();
-        sleep(1);
+        sleep(0.01);
     }
 }
