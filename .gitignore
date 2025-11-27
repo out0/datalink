@@ -19,6 +19,8 @@ seg_unet_carla/
 .jupyter
 .ipython
 .cache
+./tests/client
+./tests/server
 .sudo_as_admin_successful
 .Xauthority
 build/
