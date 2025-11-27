@@ -29,7 +29,7 @@ private:
     bool _link_ready;
     bool _is_running;
     std::unique_ptr<std::thread> _linkRunThread;
-    std::queue<datalink_raw> _incommingMessages;
+    std::queue<std::vector<char>> _incommingMessages;
 
     void _loop();
     int _openLink();
@@ -44,7 +44,7 @@ private:
     bool _readMessageFooter();
     void _rstTimeout();
     bool _checkTimeout();
-    datalink_raw _read_raw();
+    std::vector<char> _read_raw();
     std::mutex _incomming_data_mtx;
     
 
@@ -58,6 +58,5 @@ public:
     bool write(const char *payload, long payload_size);
     bool hasData();
     std::vector<char> readMessage();
-    datalink_raw readRawMessage();
     
 };

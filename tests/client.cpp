@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 
     printf("Data client\n");
 
-    TCPLink link("127.0.0.1", 20000, 60000);
+    TCPLink link("127.0.0.1", 20000, 100);
 
     int j = 9;
     while (j >= 0)
@@ -24,7 +24,7 @@ int main(int argc, char **argv)
         if (link.hasData()) {
             auto data = link.readMessage();
             printf("received %ld bytes\n", data.size());
-            j--;
+            //j--;
             // auto data = link.readRawMessage();
             // printf("received %ld bytes\n", data.size);
             // delete []data.data;

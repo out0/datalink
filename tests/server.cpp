@@ -13,7 +13,7 @@ int main(int argc, char **argv)
     for (int i = 0; i < SIZE; i++)
         payload[i] = i % 1024;
 
-    TCPLink link(20000, -1);
+    TCPLink link(20000, 100);
 
     while (true)
     {
