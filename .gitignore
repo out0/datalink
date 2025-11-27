@@ -10,7 +10,6 @@ Dockerfile
 *.log
 tst_client
 tst_server
-unittest
 lapix-RoadObjSegmentation-3
 .ipynb_checkpoints
 seg_unet_carla/

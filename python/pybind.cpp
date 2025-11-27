@@ -5,7 +5,7 @@
 #include "../include/databridge.h"
 #include "../include/datalink.h"
 
-// #define DEBUG_BIND 1
+#define DEBUG_BIND 1
 
 extern "C"
 {

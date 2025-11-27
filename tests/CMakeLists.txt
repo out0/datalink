@@ -10,6 +10,7 @@ find_package(Threads REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/include)
 
 find_package(PkgConfig REQUIRED)
 
@@ -28,50 +29,24 @@ include_directories(${GTEST_INCLUDE_DIRS})
 # )
 
 SET(TARGET_H
-  ../../include/datalink.h
-  ../../include/databridge.h
+  ../include/tcplink.h
 )
 
 
 add_executable(
-  unittest
-    ../../src/datalink_connection.cpp
-    ../../src/datalink_protocol.cpp
-    ../../src/datalink.cpp
-    ../../src/databridge.cpp
-    cpp_test_base.cpp
-    cpp_test_datalink_connection.cpp
-    cpp_test_datalink_protocol.cpp
-    cpp_test_datalink.cpp
-    cpp_test_type_conversion.cpp
+  client
+    client.cpp
+    ../src/datalink.cpp
+    ../src/tcp_link.cpp
+    ../src/utils.cpp
 )
 
 add_executable(
-  tst_client
-  cpp_client.cpp
-  ../../src/datalink_connection.cpp
-  ../../src/datalink_protocol.cpp
-  ../../src/datalink.cpp
-  ../../src/databridge.cpp
-)
-
-
-add_executable(
-  tst_server
-  cpp_server.cpp
-  ../../src/datalink_connection.cpp
-  ../../src/datalink_protocol.cpp
-  ../../src/datalink.cpp
-  ../../src/databridge.cpp
-)
-
-add_executable(
-  tst_bridge
-  cpp_bridge.cpp
-  ../../src/datalink_connection.cpp
-  ../../src/datalink_protocol.cpp
-  ../../src/datalink.cpp
-  ../../src/databridge.cpp
+  server
+    server.cpp
+    ../src/datalink.cpp
+    ../src/tcp_link.cpp
+    ../src/utils.cpp
 )
 
 
@@ -89,19 +64,12 @@ if(CMAKE_THREAD_LIBS_INIT)
 endif()
 
 # link my-recognition to jetson-inference library
-target_link_libraries(unittest PkgConfig::deps 
+target_link_libraries(client PkgConfig::deps 
   ${GTEST_LIBRARIES} 
   #${DATALINK_LIB}
 )
-target_link_libraries(tst_client PkgConfig::deps 
+
+target_link_libraries(server PkgConfig::deps 
   ${GTEST_LIBRARIES} 
-  ${DATALINK_LIB}
-)
-target_link_libraries(tst_server PkgConfig::deps 
-  ${GTEST_LIBRARIES} 
-  ${DATALINK_LIB}
-)
-target_link_libraries(tst_bridge PkgConfig::deps 
-  ${GTEST_LIBRARIES} 
-  ${DATALINK_LIB}
+  #${DATALINK_LIB}
 )

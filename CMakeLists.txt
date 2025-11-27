@@ -14,15 +14,16 @@ pkg_check_modules(deps REQUIRED IMPORTED_TARGET glib-2.0)
 
 SET(TARGET_H
     include/datalink.h
-    include/databridge.h
+    #include/databridge.h
 )
  
 add_library(${PROJECT_NAME} SHARED
     src/datalink.cpp
-    src/datalink_connection.cpp
-    src/datalink_protocol.cpp
-    src/databridge.cpp
-    python/pybind.cpp
+    src/tcp_link.cpp
+    src/utils.cpp
+    src/python_bind.cpp
+    #src/databridge.cpp
+    #python/pybind.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} 
