@@ -17,6 +17,7 @@
 #define STATE_WAIT_LISTEN 1
 #define STATE_CONNECTION_OPENED 2
 #define STATE_WAIT_CONNECTION_COMPLETION 3
+#define STATE_CONNECTION_CLOSING 4
 #define NON_BLOCKING 1
 
 #define DATALINK_MTU 1024
@@ -325,6 +326,10 @@ void TCPLink::_loop()
     case STATE_WAIT_CONNECTION_COMPLETION:
         _state = _waitConnectionToServerIsCompleted();
         break;
+    case STATE_CONNECTION_CLOSING:
+        close(_connSockFd);
+        _state = STATE_CONNECTION_CLOSED;
+        break;
     default:
         _state = STATE_CONNECTION_CLOSED;
         break;
@@ -349,13 +354,13 @@ int TCPLink::_bindPort()
     if (_listenSockFd < 0)
     {
         perror("[datalink] socket");
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
 
     if (setsockopt(_listenSockFd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
     {
         perror("[datalink] setsockopt"); // Print error if setting socket options fails
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
 
     address.sin_family = AF_INET;         // Set address family to AF_INET (IPv4)
@@ -377,7 +382,7 @@ int TCPLink::_bindPort()
     if (bind(_listenSockFd, (struct sockaddr *)&address, sizeof(address)) < 0)
     {
         perror("[datalink] bind failed");
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
 
     return STATE_WAIT_LISTEN;
@@ -402,13 +407,13 @@ int TCPLink::_acceptIncommingConnection()
     // if (select(0, &master, NULL, NULL, &time) == -1)
     // {
     //     close(_listenSockFd);
-    //     return STATE_CONNECTION_CLOSED;
+    //     return STATE_CONNECTION_CLOSING;
     // }
 
     // if (!FD_ISSET(_listenSockFd, &master))
     // {
     //     close(_listenSockFd);
-    //     return STATE_CONNECTION_CLOSED;
+    //     return STATE_CONNECTION_CLOSING;
     // }
 
     struct sockaddr_in client_address;
@@ -430,7 +435,7 @@ int TCPLink::_acceptIncommingConnection()
 
     if (!_is_running)
     {
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
 
     _link_ready = true;
@@ -480,7 +485,7 @@ int TCPLink::_openConnection()
     if (_connSockFd < 0)
     {
         perror("[datalink] socket");
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
 
     struct hostent *server_info = gethostbyname(_host);
@@ -489,7 +494,7 @@ int TCPLink::_openConnection()
         close(_connSockFd);
         printf("[datalink] resolve hostname returned empty information for host %s\n", _host);
         perror("[datalink] reason");
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
 
     struct sockaddr_in server_addr;
@@ -505,13 +510,13 @@ int TCPLink::_openConnection()
     {
         perror("[datalink] fcntl F_GETFL");
         close(_connSockFd);
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
     if (fcntl(_connSockFd, F_SETFL, flags | O_NONBLOCK) == -1)
     {
         perror("[datalink] fcntl F_SETFL O_NONBLOCK");
         close(_connSockFd);
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
 #endif
     // Connect to the server
@@ -524,7 +529,7 @@ int TCPLink::_openConnection()
             if (errno != EINPROGRESS)
             {
                 perror("[datalink] connect");
-                return STATE_CONNECTION_CLOSED;
+                return STATE_CONNECTION_CLOSING;
             }
 
             return STATE_WAIT_CONNECTION_COMPLETION;
@@ -561,7 +566,7 @@ int TCPLink::_waitConnectionToServerIsCompleted()
     if (err == -1)
         return STATE_WAIT_CONNECTION_COMPLETION;
     if (err == -3)
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
 
     struct timeval time = set_timeout_ms(_timeout_ms);
     setsockopt(_connSockFd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&time, sizeof(time));
@@ -686,7 +691,7 @@ int TCPLink::_dataTransfer()
     {
         if (_host == nullptr)
             return STATE_WAIT_LISTEN;
-        return STATE_CONNECTION_CLOSED;
+        return STATE_CONNECTION_CLOSING;
     }
 
     if (raw.size() > 0)
