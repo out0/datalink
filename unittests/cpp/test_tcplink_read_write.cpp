@@ -45,12 +45,12 @@ TEST(TCPLinkReadWrite, TestReadWriteNoTimeoutSuccess)
     }
 
     printf("receiving the data (server)\n");
-    auto data = server.readRawMessage();
+    auto data = server.readMessage();
 
-    printf ("received %ld bytes\n", data.size);
+    printf ("received %ld bytes\n", data.size());
     for (int i = 0; i < size; i++)
     {
-        if (data.data[i] != payload[i])
+        if (data[i] != payload[i])
             FAIL();
     }
 }
@@ -93,13 +93,13 @@ TEST(TCPLinkReadWrite, TestReadWriteTimeoutSuccess)
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     exec_start();
-    auto data = server.readRawMessage();
+    auto data = server.readMessage();
     exec_finished("1MB data recv client->server");
 
-    ASSERT_EQ(data.size, size);
+    ASSERT_EQ(data.size(), size);
     for (int i = 0; i < size; i++)
     {
-        if (data.data[i] != payload[i])
+        if (data[i] != payload[i])
             FAIL();
     }
 }
