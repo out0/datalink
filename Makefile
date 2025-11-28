@@ -3,7 +3,7 @@ bin:
 	mkdir -p build
 	cd build && cmake ..
 	cd build && make -j$(nproc)
-	mkdir -p python/app/Datalink/cpp
+	mkdir -p python/app/pyatalink/cpp
 	cp build/libdatalink.so.1.0.0	python/app/pydatalink/cpp/libdatalink.so
 
 all: bin 	
