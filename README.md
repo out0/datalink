@@ -90,3 +90,42 @@ Client example in Python (receiving as much data as possible):
         print (f"received: {sz} bytes")
 ```
 
+Server example in Python (sending a heavy 1000x1000x3 np.float32 array):
+
+
+```python
+
+    link = Datalink(port=20000, timeout=1000)
+    payload = np.full((1000, 1000, 3), fill_value=21.7, dtype=np.float32)
+
+    while True:
+        if not link.is_ready():
+            print ("waiting for client to connect")
+            while not link.is_ready():
+                time.sleep(0.01)
+        
+        print("sending...")
+        link.write(payload)
+        time.sleep(0.5)
+```
+
+Client example in Python (receiving a heavy 1000x1000x3 np.float32 array):
+```python
+
+    link = Datalink(host="127.0.0.1", port=20000, timeout=1000)
+
+    while True:
+        if not link.is_ready():
+            print ("waiting for the server to be ready")
+            while not link.is_ready():
+                time.sleep(0.01)
+        
+        if link.has_data():
+            rcv, sz = link.read_np((1000, 1000, 3), dtype=np.float32)
+            if sz == 0:
+                continue
+            print (f"received: {sz} bytes")
+            print (f"array shape: {rcv.shape}")
+```
+
+
