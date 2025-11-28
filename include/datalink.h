@@ -30,9 +30,22 @@ typedef union
 
 typedef union
 {
+    double fval;
+    char bval[sizeof(double)];
+} doublep;
+
+
+typedef union
+{
     long val;
     char bval[sizeof(long)];
 } longp;
+
+typedef union
+{
+    int32_t val;
+    char bval[sizeof(int32_t)];
+} intp;
 
 typedef union uint8
 {

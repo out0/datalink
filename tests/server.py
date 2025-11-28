@@ -4,26 +4,21 @@
 #
 from pydatalink import Datalink
 import time
+import numpy as np
 
 def main ():
-    link = Datalink(port=20000, timeout=100)
+    link = Datalink(port=20000, timeout=1000)
+    payload = np.full((1000, 1000, 3), fill_value=21.7, dtype=np.float32)
 
-    payload = "A" * (1024 * 1024)
-
-    pos = 1
     while True:
         if not link.is_ready():
             print ("waiting for client to connect")
             while not link.is_ready():
                 time.sleep(0.01)
         
-        print (f"sending msg #{pos} - {len(payload)} bytes")
+        print("sending...")
         link.write(payload)
-        pos += 1
-        
-        # _, sz = link.read()
-        # print (f"received: {sz} bytes")
-        # time.sleep(0.5)
+        time.sleep(0.5)
 
 
 if __name__ == "__main__":
