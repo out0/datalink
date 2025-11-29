@@ -60,6 +60,10 @@ class Datalink:
         Datalink.lib.write_int_array.argtypes = [ctypes.c_void_p,
                                     np.ctypeslib.ndpointer(dtype=ctypes.c_int, ndim=1), ctypes.c_long]
 
+        Datalink.lib.write_int8_array.restype = ctypes.c_bool
+        Datalink.lib.write_int8_array.argtypes = [ctypes.c_void_p,
+                                    np.ctypeslib.ndpointer(dtype=ctypes.c_int8, ndim=1), ctypes.c_long]
+
         Datalink.lib.write_long_array.restype = ctypes.c_bool
         Datalink.lib.write_long_array.argtypes = [ctypes.c_void_p,
                                     np.ctypeslib.ndpointer(dtype=ctypes.c_long, ndim=1), ctypes.c_long]
@@ -84,6 +88,9 @@ class Datalink:
         Datalink.lib.next_message_int_array.restype = ctypes.POINTER(ctypes.c_int)
         Datalink.lib.next_message_int_array.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_long)]
 
+        Datalink.lib.next_message_int8_array.restype = ctypes.POINTER(ctypes.c_int8)
+        Datalink.lib.next_message_int8_array.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_long)]
+
         Datalink.lib.next_message_long_array.restype = ctypes.POINTER(ctypes.c_long)
         Datalink.lib.next_message_long_array.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_long)]
         
@@ -98,6 +105,9 @@ class Datalink:
 
         Datalink.lib.free_memory_int.argtypes = [ ctypes.POINTER(ctypes.c_int)]
         Datalink.lib.free_memory_int.restype = None
+
+        Datalink.lib.free_memory_int8.argtypes = [ ctypes.POINTER(ctypes.c_int8)]
+        Datalink.lib.free_memory_int8.restype = None
 
         Datalink.lib.free_memory_long.argtypes = [ ctypes.POINTER(ctypes.c_long)]
         Datalink.lib.free_memory_long.restype = None
@@ -293,6 +303,19 @@ class Datalink:
                 res[i] = float(ptr[i])
 
             Datalink.lib.free_memory_double(ptr)       
+
+        elif dtype == np.dtype(np.int8):
+            ptr = Datalink.lib.next_message_int8_array(
+                    self.link,
+                    ctypes.byref(size))
+
+            size = size.value           
+            res = np.zeros(size, dtype=dtype)
+
+            for i in range (size):
+                res[i] = float(ptr[i])
+
+            Datalink.lib.free_memory_int8(ptr)  
 
         else: return None, 0
 

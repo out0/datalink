@@ -76,7 +76,18 @@ char *data_encode(double *data, long size)
     }
     return p;
 }
+char *data_encode(int8_t *data, long size)
+{
+    char *p = new char[size * sizeof(int8_t)];
+    int8p val;
 
+    for (long i = 0; i < size; i++)
+    {
+        val.val = data[i];
+        p[i] = val.bval;
+    }
+    return p;
+}
 int *data_decode_int(char *data, long size)
 {
     long raw_size = size * sizeof(int32_t);
@@ -90,6 +101,19 @@ int *data_decode_int(char *data, long size)
             val.bval[j] = data[pos];
             pos++;
         }
+        p[i] = val.val;
+    }
+    return p;
+}
+int8_t *data_decode_int8(char *data, long size)
+{
+    long raw_size = size * sizeof(int32_t);
+    int8_t *p = new int8_t[size];
+    int8p val;
+
+    for (long i = 0; i < size; i++)
+    {
+        val.bval = data[i];
         p[i] = val.val;
     }
     return p;
@@ -145,4 +169,3 @@ double *data_decode_double(char *data, long size)
     }
     return p;
 }
-

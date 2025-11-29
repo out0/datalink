@@ -8,7 +8,7 @@ import numpy as np
 
 def main ():
     link = Datalink(port=20000, timeout=1000)
-    payload = np.full((100, 100, 3), fill_value=10, dtype=np.int32)
+    payload = np.full((100, 100, 3), fill_value=10, dtype=np.int8)
 
     while True:
         if not link.is_ready():

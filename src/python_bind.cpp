@@ -6,11 +6,13 @@
 
 // #define DEBUG_BIND 1
 
+extern char *data_encode(int8_t *data, long size);
 extern char *data_encode(int *data, long size);
 extern char *data_encode(long *data, long size);
 extern char *data_encode(float *data, long size);
 extern char *data_encode(double *data, long size);
 extern int *data_decode_int(char *data, long size);
+extern int8_t *data_decode_int8(char *data, long size);
 extern long *data_decode_long(char *data, long size);
 extern float *data_decode_float(char *data, long size);
 extern double *data_decode_double(char *data, long size);
@@ -67,7 +69,7 @@ extern "C"
                 printf("writing string to the Datalink %p size: %ld\n", link, size);
 #endif
                 char *p = data_encode(data, size);
-                int res = ((TCPLink *)link)->write(p, size* sizeof(long));
+                int res = ((TCPLink *)link)->write(p, size * sizeof(long));
                 delete[] p;
                 return res;
         }
@@ -77,7 +79,7 @@ extern "C"
                 printf("writing string to the Datalink %p size: %ld\n", link, size);
 #endif
                 char *p = data_encode(data, size);
-                int res = ((TCPLink *)link)->write(p, size* sizeof(float));
+                int res = ((TCPLink *)link)->write(p, size * sizeof(float));
                 delete[] p;
                 return res;
         }
@@ -87,7 +89,17 @@ extern "C"
                 printf("writing string to the Datalink %p size: %ld\n", link, size);
 #endif
                 char *p = data_encode(data, size);
-                int res = ((TCPLink *)link)->write(p, size* sizeof(double));
+                int res = ((TCPLink *)link)->write(p, size * sizeof(double));
+                delete[] p;
+                return res;
+        }
+        bool write_int8_array(void *link, int8_t *data, long size)
+        {
+#ifdef DEBUG_BIND
+                printf("writing string to the Datalink %p size: %ld\n", link, size);
+#endif
+                char *p = data_encode(data, size);
+                int res = ((TCPLink *)link)->write(p, size * sizeof(int8_t));
                 delete[] p;
                 return res;
         }
@@ -106,15 +118,23 @@ extern "C"
         {
                 auto ptr = ((TCPLink *)link);
                 auto data = ptr->readMessage();
-                //printf ("[C++] INT package received data size: %ld\n", data.size());
+                // printf ("[C++] INT package received data size: %ld\n", data.size());
                 *size = data.size() / sizeof(int32_t);
                 return data_decode_int(&data[0], *size);
+        }
+        int8_t *next_message_int8_array(void *link, long *size)
+        {
+                auto ptr = ((TCPLink *)link);
+                auto data = ptr->readMessage();
+                // printf ("[C++] INT package received data size: %ld\n", data.size());
+                *size = data.size() / sizeof(int32_t);
+                return data_decode_int8(&data[0], *size);
         }
         long *next_message_long_array(void *link, long *size)
         {
                 auto ptr = ((TCPLink *)link);
                 auto data = ptr->readMessage();
-                //printf ("[C++] LONG package received data size: %ld\n", data.size());
+                // printf ("[C++] LONG package received data size: %ld\n", data.size());
                 *size = data.size() / sizeof(long);
                 return data_decode_long(&data[0], *size);
         }
@@ -122,7 +142,7 @@ extern "C"
         {
                 auto ptr = ((TCPLink *)link);
                 auto data = ptr->readMessage();
-                //printf ("[C++] FLOAT package received data size: %ld\n", data.size());
+                // printf ("[C++] FLOAT package received data size: %ld\n", data.size());
                 *size = data.size() / sizeof(float);
                 return data_decode_float(&data[0], *size);
         }
@@ -130,7 +150,7 @@ extern "C"
         {
                 auto ptr = ((TCPLink *)link);
                 auto data = ptr->readMessage();
-                //printf ("[C++] DOUBLE package received data size: %ld\n", data.size());
+                // printf ("[C++] DOUBLE package received data size: %ld\n", data.size());
                 *size = data.size() / sizeof(double);
                 return data_decode_double(&data[0], *size);
         }
@@ -143,6 +163,12 @@ extern "C"
         {
                 delete[] msg;
         }
+
+        void free_memory_int8(int8_t *msg)
+        {
+                delete[] msg;
+        }
+        
         void free_memory_long(long *msg)
         {
                 delete[] msg;

@@ -53,6 +53,14 @@ typedef union uint8
     char bval;
 } uint8;
 
+typedef union int8p
+{
+    int8_t val;
+    char bval;
+} int8p;
+
+
+
 class Datalink
 {
 
