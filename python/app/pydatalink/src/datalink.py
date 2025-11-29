@@ -137,6 +137,17 @@ class Datalink:
 
         #Datalink.lib.free_memory(result_ptr)
         return data, size.value
+    
+    def read_bytes(self) -> tuple[bytes, int]:
+        size = ctypes.c_long(0)
+        result_ptr = Datalink.lib.next_message(self.link, ctypes.byref(size))
+        if size == 0:
+            return "", 0
+        
+        res = ctypes.string_at(result_ptr, size.value)
+
+        #Datalink.lib.free_memory(result_ptr)
+        return res, size.value
                   
     # def encode_type(self, dtype) -> int:
     #     dt = np.dtype(dtype)
@@ -186,18 +197,27 @@ class Datalink:
                     self.link,
                     sending_data,
                     ctypes.c_long(total_size))
+        
         if data.dtype == np.dtype(np.int64):
             return Datalink.lib.write_long_array(
                     self.link,
                     sending_data,
                      ctypes.c_long(total_size))
+        
         if data.dtype == np.dtype(np.float32):
             return Datalink.lib.write_float_array(
                     self.link,
                     sending_data,
                     ctypes.c_long(total_size))
+        
         if data.dtype == np.dtype(np.float64):
             return Datalink.lib.write_double_array(
+                    self.link,
+                    sending_data,
+                    ctypes.c_long(total_size))
+        
+        if data.dtype == np.dtype(np.int8):
+            return Datalink.lib.write_int8_array(
                     self.link,
                     sending_data,
                     ctypes.c_long(total_size))
