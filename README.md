@@ -3,7 +3,15 @@
 ### This is still an on-going project
 
 #### Datalink provides fast dual easy client-server connection between two terminals A <------> B
-#### The idea is simple: declare one side as server and another side as client. The link is going to keep the connection and re-connect if it fails, automatically.
+
+The idea is simple: declare one side as server and another side as client. The link is going to keep the connection and re-connect if it fails, automatically.
+
+All data is transmited using uint8_t format, equivalent to an unsigned byte, which means that any connection that can
+handle a stream of bytes (all connections in the world?) may support the datalink payload.
+
+Python to C++ binding is also performed on byte array level. Python np array, string or any type of data is converted into bytes to be sent through the link. To avoid memory leaking, the python interpreter is responsible for handling the buffer data. We're allocating a new buffer for every message, since we understand that this is much more reliable.
+
+In a pure TCP local connection, we've achieved 5 Gb/s in C++ and ~4.3 Gb/s in Python which are close numbers.
 
 Server example in C++ (sending as much data as possible):
 
