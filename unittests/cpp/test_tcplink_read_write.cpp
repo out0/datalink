@@ -31,7 +31,7 @@ TEST(TCPLinkReadWrite, TestReadWriteNoTimeoutSuccess)
     }
 
     int size = 1024 * 1024; // 1 MB
-    char *payload = new char[size];
+    uint8_t *payload = new uint8_t[size];
     for (int i = 0; i < size; i++)
     {
         payload[i] = i % 100;
@@ -77,7 +77,7 @@ TEST(TCPLinkReadWrite, TestReadWriteTimeoutSuccess)
     }
 
     int size = 1024 * 1024; // 1 MB
-    char *payload = new char[size];
+    uint8_t *payload = new uint8_t[size];
     for (int i = 0; i < size; i++)
     {
         payload[i] = i % 100;

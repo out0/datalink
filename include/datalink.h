@@ -25,38 +25,38 @@ readData() reads last received data, when called, puts internal threading into i
 typedef union
 {
     float fval;
-    char bval[sizeof(float)];
+    uint8_t bval[sizeof(float)];
 } floatp;
 
 typedef union
 {
     double fval;
-    char bval[sizeof(double)];
+    uint8_t bval[sizeof(double)];
 } doublep;
 
 
 typedef union
 {
     long val;
-    char bval[sizeof(long)];
+    uint8_t bval[sizeof(long)];
 } longp;
 
 typedef union
 {
     int32_t val;
-    char bval[sizeof(int32_t)];
+    uint8_t bval[sizeof(int32_t)];
 } intp;
 
 typedef union uint8
 {
     uint8_t val;
-    char bval;
+    uint8_t bval;
 } uint8;
 
 typedef union int8p
 {
     int8_t val;
-    char bval;
+    uint8_t bval;
 } int8p;
 
 

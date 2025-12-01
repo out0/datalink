@@ -75,7 +75,7 @@ inline void wait_ms(int ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
-int write_header(int sockfd, char *default_header, long payload_size)
+int write_header(int sockfd, uint8_t *default_header, long payload_size)
 {
     longp p;
     p.val = payload_size;
@@ -101,7 +101,7 @@ int write_header(int sockfd, char *default_header, long payload_size)
 
     return (i == HEADER_SIZE) ? 0 : -1;
 }
-int write_footer(int sockfd, char *default_footer)
+int write_footer(int sockfd, uint8_t *default_footer)
 {
     // printf ("sent footer: ");
     // for (int i = 0; i < FOOTER_SIZE; i++)
@@ -117,7 +117,7 @@ int write_footer(int sockfd, char *default_footer)
     }
     return (i == FOOTER_SIZE) ? 0 : -1;
 }
-bool check_repeat_byte(char *buffer, int startPos, int count, int byte)
+bool check_repeat_byte(uint8_t *buffer, int startPos, int count, int byte)
 {
     for (int i = startPos; i < startPos + count; i++)
         if (buffer[i] != byte)
@@ -125,7 +125,7 @@ bool check_repeat_byte(char *buffer, int startPos, int count, int byte)
     return true;
 }
 
-bool TCPLink::_readFromSocket(int sockfd, char *buffer, long size)
+bool TCPLink::_readFromSocket(int sockfd, uint8_t *buffer, long size)
 {
     if (!_link_ready)
         return false;
@@ -250,7 +250,7 @@ bool TCPLink::_checkTimeout()
     return false;
 }
 
-bool TCPLink::write(const char *payload, long payload_size)
+bool TCPLink::write(const uint8_t *payload, long payload_size)
 {
     if (!_link_ready)
         return false;
@@ -297,7 +297,7 @@ bool TCPLink::write(const char *payload, long payload_size)
     _write_with_invalid_state = false;
     return true;
 }
-std::vector<char> TCPLink::_read_raw()
+std::vector<uint8_t> TCPLink::_read_raw()
 {
     if (!_link_ready)
         return {};
@@ -306,7 +306,7 @@ std::vector<char> TCPLink::_read_raw()
     if (size <= 0)
         return {};
 
-    std::vector<char> res;
+    std::vector<uint8_t> res;
     res.resize(size);
 
     if (_readFromSocket(_connSockFd, &res[0], size) && _readMessageFooter())
@@ -315,10 +315,10 @@ std::vector<char> TCPLink::_read_raw()
     }
 
     res.clear();
-    return std::vector<char>();
+    return std::vector<uint8_t>();
 }
 
-void build_default_header(char *header)
+void build_default_header(uint8_t *header)
 {
     memset(header, 0, HEADER_SIZE);
 
@@ -330,7 +330,7 @@ void build_default_header(char *header)
     for (int i = 0; i < HEADER_LEN; i++)
         header[i + st] = HEADER_FINISH_BYTE;
 }
-char *build_default_footer(char *footer)
+uint8_t *build_default_footer(uint8_t *footer)
 {
     memset(footer, 0, FOOTER_SIZE);
 
@@ -586,7 +586,7 @@ int TCPLink::_waitConnectionToServerIsCompleted()
         return STATE_CONNECTION_CLOSING;
 
     // struct timeval time = set_timeout_ms(_timeout_ms);
-    // setsockopt(_connSockFd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&time, sizeof(time));
+    // setsockopt(_connSockFd, SOL_SOCKET, SO_RCVTIMEO, (const uint8_t *)&time, sizeof(time));
     _rstTimeout();
     _link_ready = true;
 
@@ -623,7 +623,6 @@ TCPLink::TCPLink(const char *server, int port, float no_data_timeout_ms)
     build_default_footer(_default_footer);
     _link_ready = false;
     _is_running = true;
-    _last_raw_buffer_size = -1;
     _linkRunThread = std::make_unique<std::thread>(&TCPLink::_linkRun, this);
 }
 
@@ -648,7 +647,6 @@ TCPLink::TCPLink(char *server, int port, float no_data_timeout_ms)
     build_default_footer(_default_footer);
     _link_ready = false;
     _is_running = true;
-    _last_raw_buffer_size = -1;
     _linkRunThread = std::make_unique<std::thread>(&TCPLink::_linkRun, this);
 }
 TCPLink::TCPLink(int port, float no_data_timeout_ms)
@@ -663,7 +661,6 @@ TCPLink::TCPLink(int port, float no_data_timeout_ms)
     build_default_footer(_default_footer);
     _link_ready = false;
     _is_running = true;
-    _last_raw_buffer_size = -1;
     _linkRunThread = std::make_unique<std::thread>(&TCPLink::_linkRun, this);
 }
 TCPLink::~TCPLink()
@@ -696,7 +693,7 @@ bool TCPLink::hasData()
 {
     return _incommingMessages.size() > 0;
 }
-std::vector<char> TCPLink::readMessage()
+std::vector<uint8_t> TCPLink::readMessage()
 {
     std::lock_guard<std::mutex> guard(_incomming_data_mtx);
     if (!hasData()) return {};
@@ -731,21 +728,24 @@ int TCPLink::_dataTransfer()
 
     return STATE_CONNECTION_OPENED;
 }
-char *TCPLink::readMessage(long *size) {
+long TCPLink::readMessageSize() {
     if (!_link_ready || !hasData()) {
-        *size = 0;
-        return nullptr;
+        return 0;
     }
     
-    auto msg = _incommingMessages.front();
+    return _incommingMessages.front().size();
+}
 
-    if (_last_raw_buffer_size != static_cast<long>(msg.size())) {
-        // allocate shared buffer for array with array deleter
-        _last_raw_buffer = std::shared_ptr<char>(new char[msg.size()], std::default_delete<char[]>());
-        _last_raw_buffer_size = static_cast<long>(msg.size());
+long TCPLink::readMessageToBuffer(uint8_t *buffer, long size) {
+    if (size <= 0) return size;
+    
+    if (!_link_ready || !hasData()) {
+        return 0;
     }
 
-    *size = msg.size();
-    memcpy(_last_raw_buffer.get(), &msg[0], *size);
-    return _last_raw_buffer.get();
+    auto msg = readMessage();
+    long read_size = min(msg.size(), size);
+    
+    memcpy(buffer, &msg[0], read_size);
+    return read_size;
 }

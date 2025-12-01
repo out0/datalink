@@ -12,17 +12,10 @@ timeval set_timeout_ms(double timeout_ms)
     return time;
 }
 
-
-typedef struct buffer
+/*
+uint8_t *data_encode(int *data, long size)
 {
-    void *data;
-    long size;
-} buffer;
-
-
-char *data_encode(int *data, long size)
-{
-    char *p = new char[size * sizeof(int32_t)];
+    uint8_t *p = new uint8_t[size * sizeof(int32_t)];
     intp val;
 
     for (long i = 0, pos = 0; i < size; i++)
@@ -36,9 +29,9 @@ char *data_encode(int *data, long size)
     }
     return p;
 }
-char *data_encode(long *data, long size)
+uint8_t *data_encode(long *data, long size)
 {
-    char *p = new char[size * sizeof(long)];
+    uint8_t *p = new uint8_t[size * sizeof(long)];
     longp val;
 
     for (long i = 0, pos = 0; i < size; i++)
@@ -52,9 +45,9 @@ char *data_encode(long *data, long size)
     }
     return p;
 }
-char *data_encode(float *data, long size)
+uint8_t *data_encode(float *data, long size)
 {
-    char *p = new char[size * sizeof(float)];
+    uint8_t *p = new uint8_t[size * sizeof(float)];
     floatp val;
 
     for (long i = 0, pos = 0; i < size; i++)
@@ -68,9 +61,9 @@ char *data_encode(float *data, long size)
     }
     return p;
 }
-char *data_encode(double *data, long size)
+uint8_t *data_encode(double *data, long size)
 {
-    char *p = new char[size * sizeof(double)];
+    uint8_t *p = new uint8_t[size * sizeof(double)];
     doublep val;
 
     for (long i = 0, pos = 0; i < size; i++)
@@ -84,9 +77,9 @@ char *data_encode(double *data, long size)
     }
     return p;
 }
-char *data_encode(int8_t *data, long size)
+uint8_t *data_encode(int8_t *data, long size)
 {
-    char *p = new char[size * sizeof(int8_t)];
+    uint8_t *p = new uint8_t[size * sizeof(int8_t)];
     int8p val;
 
     for (long i = 0; i < size; i++)
@@ -96,7 +89,7 @@ char *data_encode(int8_t *data, long size)
     }
     return p;
 }
-int *data_decode_int(char *data, long size)
+int *data_decode_int(uint8_t *data, long size)
 {
     int *p = new int[size];
     intp val;
@@ -112,7 +105,7 @@ int *data_decode_int(char *data, long size)
     }
     return p;
 }
-int8_t *data_decode_int8(char *data, long size)
+int8_t *data_decode_int8(uint8_t *data, long size)
 {
     int8_t *p = new int8_t[size];
     int8p val;
@@ -124,7 +117,7 @@ int8_t *data_decode_int8(char *data, long size)
     }
     return p;
 }
-long *data_decode_long(char *data, long size)
+long *data_decode_long(uint8_t *data, long size)
 {
     long *p = new long[size];
     longp val;
@@ -140,7 +133,7 @@ long *data_decode_long(char *data, long size)
     }
     return p;
 }
-float *data_decode_float(char *data, long size)
+float *data_decode_float(uint8_t *data, long size)
 {
     float *p = new float[size];
     floatp val;
@@ -156,7 +149,7 @@ float *data_decode_float(char *data, long size)
     }
     return p;
 }
-double *data_decode_double(char *data, long size)
+double *data_decode_double(uint8_t *data, long size)
 {
     double *p = new double[size];
     doublep val;
@@ -172,3 +165,4 @@ double *data_decode_double(char *data, long size)
     }
     return p;
 }
+*/

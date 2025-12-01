@@ -3,12 +3,12 @@
 #include "../include/datalink.h"
 
 #define HEADER_INIT_BYTE 32
-#define HEADER_LEN 5*sizeof(char)
+#define HEADER_LEN 5*sizeof(uint8_t)
 #define HEADER_FINISH_BYTE 33
 #define HEADER_SIZE 2*HEADER_LEN + sizeof(long)
 
 #define FOOTER_BYTE 34
-#define FOOTER_SIZE 5*sizeof(char)
+#define FOOTER_SIZE 5*sizeof(uint8_t)
 
 #include <queue>
 #include <vector>
@@ -24,15 +24,15 @@ private:
     
     double _timeoutStart;
     double _timeout_ms;
-    char _default_header[HEADER_SIZE + 1];
-    char _default_footer[FOOTER_SIZE + 1];
-    char _read_header[HEADER_SIZE + 1];
-    char _read_footer[FOOTER_SIZE + 1];
+    uint8_t _default_header[HEADER_SIZE + 1];
+    uint8_t _default_footer[FOOTER_SIZE + 1];
+    uint8_t _read_header[HEADER_SIZE + 1];
+    uint8_t _read_footer[FOOTER_SIZE + 1];
     bool _link_ready;
     bool _is_running;
     bool _write_with_invalid_state;
     std::unique_ptr<std::thread> _linkRunThread;
-    std::queue<std::vector<char>> _incommingMessages;
+    std::queue<std::vector<uint8_t>> _incommingMessages;
 
     void _loop();
     int _openLink();
@@ -42,17 +42,14 @@ private:
     int _waitConnectionToServerIsCompleted();
     int _dataTransfer();
     void _linkRun();
-    bool _readFromSocket(int sockfd, char *buffer, long size);
+    bool _readFromSocket(int sockfd, uint8_t *buffer, long size);
     long _readMessageHeader();
     bool _readMessageFooter();
     void _rstTimeout();
     bool _checkTimeout();
-    std::vector<char> _read_raw();
+    std::vector<uint8_t> _read_raw();
     std::mutex _incomming_data_mtx;
     
-    /// Python data share
-    std::shared_ptr<char> _last_raw_buffer;
-    long _last_raw_buffer_size;
 
 
 public:
@@ -62,11 +59,13 @@ public:
     ~TCPLink();
 
     bool isReady();
-    bool write(const char *payload, long payload_size);
+    bool write(const uint8_t *payload, long payload_size);
     bool hasData();
+    
 
-    std::vector<char> readMessage();
-    char *readMessage(long *size);
+    std::vector<uint8_t> readMessage();
+    long readMessageSize();
+    long readMessageToBuffer(uint8_t *buffer, long size);
 
     
     

@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 
     printf("Data Server\n");
 
-    char *payload = new char[SIZE];
+    uint8_t *payload = new uint8_t[SIZE];
     for (int i = 0; i < SIZE; i++)
         payload[i] = i % 1024;
 

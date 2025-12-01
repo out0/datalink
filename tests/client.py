@@ -8,6 +8,7 @@ faulthandler.enable()
 def main ():
     link = Datalink(host="127.0.0.1", port=20000, timeout=1000)
 
+    i = 0
     while True:
         if not link.is_ready():
             print ("waiting for the server to be ready")
@@ -15,7 +16,8 @@ def main ():
                 time.sleep(0.01)
         
         if link.has_data():
-            rcv, sz = link.read_np((100, 100, 3), dtype=np.int8)
+            #rcv, sz = link.read_bytes()
+            rcv, sz = link.read_np((1024, 1024), dtype=np.int8)
             print (f"received {sz} bytes")
             #rcv, sz = link.read_bytes()
             
@@ -28,6 +30,9 @@ def main ():
             #     continue
             # print (f"received: {sz} bytes")
             # print (f"array shape: {rcv.shape}")
+            # if i > 10:
+            #     break
+            # i += 1
 
 if __name__ == "__main__":
     main()
