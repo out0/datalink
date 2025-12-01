@@ -69,7 +69,7 @@ extern "C"
                 printf("writing string to the Datalink %p size: %ld\n", link, size);
 #endif
                 char *p = data_encode(data, size);
-                int res = ((TCPLink *)link)->write(p, size * sizeof(long));
+                bool res = ((TCPLink *)link)->write(p, size * sizeof(long));
                 delete[] p;
                 return res;
         }
@@ -79,7 +79,7 @@ extern "C"
                 printf("writing string to the Datalink %p size: %ld\n", link, size);
 #endif
                 char *p = data_encode(data, size);
-                int res = ((TCPLink *)link)->write(p, size * sizeof(float));
+                bool res = ((TCPLink *)link)->write(p, size * sizeof(float));
                 delete[] p;
                 return res;
         }
@@ -89,7 +89,7 @@ extern "C"
                 printf("writing string to the Datalink %p size: %ld\n", link, size);
 #endif
                 char *p = data_encode(data, size);
-                int res = ((TCPLink *)link)->write(p, size * sizeof(double));
+                bool res = ((TCPLink *)link)->write(p, size * sizeof(double));
                 delete[] p;
                 return res;
         }
@@ -99,7 +99,7 @@ extern "C"
                 printf("writing string to the Datalink %p size: %ld\n", link, size);
 #endif
                 char *p = data_encode(data, size);
-                int res = ((TCPLink *)link)->write(p, size * sizeof(int8_t));
+                bool res = ((TCPLink *)link)->write(p, size * sizeof(int8_t));
                 delete[] p;
                 return res;
         }
@@ -127,7 +127,7 @@ extern "C"
                 auto ptr = ((TCPLink *)link);
                 auto data = ptr->readMessage();
                 // printf ("[C++] INT package received data size: %ld\n", data.size());
-                *size = data.size() / sizeof(int32_t);
+                *size = data.size() / sizeof(int8_t);
                 return data_decode_int8(&data[0], *size);
         }
         long *next_message_long_array(void *link, long *size)

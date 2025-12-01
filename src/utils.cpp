@@ -12,6 +12,14 @@ timeval set_timeout_ms(double timeout_ms)
     return time;
 }
 
+
+typedef struct buffer
+{
+    void *data;
+    long size;
+} buffer;
+
+
 char *data_encode(int *data, long size)
 {
     char *p = new char[size * sizeof(int32_t)];
@@ -46,7 +54,7 @@ char *data_encode(long *data, long size)
 }
 char *data_encode(float *data, long size)
 {
-    char *p = new char[size * sizeof(long)];
+    char *p = new char[size * sizeof(float)];
     floatp val;
 
     for (long i = 0, pos = 0; i < size; i++)
@@ -62,7 +70,7 @@ char *data_encode(float *data, long size)
 }
 char *data_encode(double *data, long size)
 {
-    char *p = new char[size * sizeof(long)];
+    char *p = new char[size * sizeof(double)];
     doublep val;
 
     for (long i = 0, pos = 0; i < size; i++)
@@ -90,7 +98,6 @@ char *data_encode(int8_t *data, long size)
 }
 int *data_decode_int(char *data, long size)
 {
-    long raw_size = size * sizeof(int32_t);
     int *p = new int[size];
     intp val;
 
@@ -107,7 +114,6 @@ int *data_decode_int(char *data, long size)
 }
 int8_t *data_decode_int8(char *data, long size)
 {
-    long raw_size = size * sizeof(int32_t);
     int8_t *p = new int8_t[size];
     int8p val;
 
@@ -120,7 +126,6 @@ int8_t *data_decode_int8(char *data, long size)
 }
 long *data_decode_long(char *data, long size)
 {
-    long raw_size = size * sizeof(long);
     long *p = new long[size];
     longp val;
 
@@ -137,7 +142,6 @@ long *data_decode_long(char *data, long size)
 }
 float *data_decode_float(char *data, long size)
 {
-    long raw_size = size * sizeof(long);
     float *p = new float[size];
     floatp val;
 
@@ -154,7 +158,6 @@ float *data_decode_float(char *data, long size)
 }
 double *data_decode_double(char *data, long size)
 {
-    long raw_size = size * sizeof(long);
     double *p = new double[size];
     doublep val;
 

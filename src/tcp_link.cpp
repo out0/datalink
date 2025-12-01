@@ -699,6 +699,7 @@ bool TCPLink::hasData()
 std::vector<char> TCPLink::readMessage()
 {
     std::lock_guard<std::mutex> guard(_incomming_data_mtx);
+    if (!hasData()) return {};
     auto data = _incommingMessages.front();
     _incommingMessages.pop();
     return data;
