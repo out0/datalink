@@ -41,6 +41,7 @@ bool check_connection_lost(int socketResult, int errorCode)
     case 53:  // aborted
     case 54:  // connection reset by peer
     case 104: // connection reset by peer
+    case 107: // endpoint is not connected
     case 111: // connection refused
 #ifdef DEBUG
         printf("[datalink] connection lost code: %d\n", errorCode);
@@ -348,6 +349,11 @@ void TCPLink::_loop()
     {
         _state = STATE_CONNECTION_CLOSING;
         _write_with_invalid_state = false;
+    }
+
+    if (_checkTimeout()) {
+        _state = STATE_CONNECTION_CLOSING;
+        _rstTimeout();
     }
 
     switch (_state)

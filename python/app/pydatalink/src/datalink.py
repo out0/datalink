@@ -135,10 +135,20 @@ class Datalink:
                 ctypes.c_char_p(msg.encode('utf-8')),
                 ctypes.c_long(len(data)),
                 timestamp)
+    def _shape_size(self, shape) -> int:
+        size = 1
+        for dim in shape:
+            size *= dim
+        return size
 
     def read_np(self, shape, dtype) -> tuple[np.ndarray, int, float]:
         raw_data, size, timestamp = self.read_bytes()
         if size == 0:
-            return np.array([]), 0        
+            return np.array([]), 0, 0 
+        expected_size = self._shape_size(shape) * np.dtype(dtype).itemsize
+        if size !=expected_size:
+            print(f"Data size does not match expected size: {size} != {expected_size}")
+            return np.array([]), 0, 0 
+        
         new_arr = np.frombuffer(raw_data, dtype=dtype)
         return new_arr.reshape(shape), size, timestamp
