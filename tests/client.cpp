@@ -22,8 +22,8 @@ int main(int argc, char **argv)
         }
         
         if (link.hasData()) {
-            auto data = link.readMessage();
-            printf("received %ld bytes\n", data.size());
+            auto [data, timestamp] = link.readMessage();
+            printf("received %ld bytes [%f]\n", data.size(), timestamp);
             //j--;
             // auto data = link.readRawMessage();
             // printf("received %ld bytes\n", data.size);

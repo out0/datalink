@@ -38,14 +38,14 @@ TEST(TCPLinkReadWrite, TestReadWriteNoTimeoutSuccess)
     }
 
     printf("connected, sending data now\n");
-    ASSERT_TRUE(client.write(payload, size));
+    ASSERT_TRUE(client.write(payload, size, 123.45));
 
     while (!server.hasData()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
     printf("receiving the data (server)\n");
-    auto data = server.readMessage();
+    auto [data, timestamp] = server.readMessage();
 
     printf ("received %ld bytes\n", data.size());
     for (int i = 0; i < size; i++)
@@ -53,6 +53,7 @@ TEST(TCPLinkReadWrite, TestReadWriteNoTimeoutSuccess)
         if (data[i] != payload[i])
             FAIL();
     }
+    ASSERT_FLOAT_EQ(timestamp, 123.45);
 }
 
 
@@ -85,7 +86,7 @@ TEST(TCPLinkReadWrite, TestReadWriteTimeoutSuccess)
 
     //printf("connected, sending data now\n");
     exec_start();
-    ASSERT_TRUE(client.write(payload, size));
+    ASSERT_TRUE(client.write(payload, size, 123.45));
     exec_finished("1MB data send client->server");
 
     //printf("receiving the data (server)\n");
@@ -93,10 +94,11 @@ TEST(TCPLinkReadWrite, TestReadWriteTimeoutSuccess)
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     exec_start();
-    auto data = server.readMessage();
+    auto [data, timestamp] = server.readMessage();
     exec_finished("1MB data recv client->server");
 
     ASSERT_EQ(data.size(), size);
+    ASSERT_FLOAT_EQ(timestamp, 123.45);
     for (int i = 0; i < size; i++)
     {
         if (data[i] != payload[i])

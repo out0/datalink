@@ -75,14 +75,25 @@ inline void wait_ms(int ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
-int write_header(int sockfd, uint8_t *default_header, long payload_size)
+int write_header(int sockfd, uint8_t *default_header, long payload_size, double timestamp)
 {
     longp p;
     p.val = payload_size;
 
+    int pos = HEADER_LEN;
     for (int i = 0; i < sizeof(long); i++)
     {
-        default_header[i + HEADER_LEN] = p.bval[i];
+        default_header[pos] = p.bval[i];
+        pos++;
+    }
+
+    doublep q;
+    q.fval = timestamp;
+
+    for (int i = 0; i < sizeof(double); i++)
+    {
+        default_header[pos] = q.bval[i];
+        pos++;
     }
 
     // printf ("sent header: ");
@@ -172,12 +183,11 @@ bool TCPLink::_readFromSocket(int sockfd, uint8_t *buffer, long size)
 
     return true;
 }
-long TCPLink::_readMessageHeader()
+
+std::tuple<long, double> TCPLink::_readMessageHeader()
 {
     if (!_readFromSocket(_connSockFd, _read_header, HEADER_SIZE))
-    {
-        return -1;
-    }
+        return {-1, -1};
 
     // printf("recv header: ");
     // for (int i = 0; i < HEADER_SIZE; i++) {
@@ -186,44 +196,31 @@ long TCPLink::_readMessageHeader()
     // printf("\n");
 
     if (!check_repeat_byte(_read_header, 0, HEADER_LEN, HEADER_INIT_BYTE))
-    {
-        // printf ("invalid header start\n");
-        return -1;
-    }
+        return {-1, -1};
 
     longp res;
-    for (int i = HEADER_LEN; i < HEADER_LEN + sizeof(long); i++)
+    int q = HEADER_LEN + sizeof(long);
+    for (int i = HEADER_LEN; i < q; i++)
         res.bval[i - HEADER_LEN] = _read_header[i];
 
-    if (!check_repeat_byte(_read_header, HEADER_LEN + sizeof(long), HEADER_LEN, HEADER_FINISH_BYTE))
-    {
-        // printf ("invalid header end\n");
-        return -1;
-    }
+    doublep ts;
+    for (int i = q; i < q + sizeof(double); i++)
+        ts.bval[i - q] = _read_header[i];
+
+    if (!check_repeat_byte(_read_header, HEADER_SIZE - HEADER_LEN, HEADER_LEN, HEADER_FINISH_BYTE))
+        return {-1, -1};
 
     // printf ("valid header with %ld bytes\n", res.val);
 
-    return res.val;
+    return {res.val, ts.fval};
 }
+
 bool TCPLink::_readMessageFooter()
 {
     if (!_readFromSocket(_connSockFd, _read_footer, FOOTER_SIZE))
-    {
-        // printf ("[FOOTER] error reading from socket\n");
         return false;
-    }
 
-    // bool v = check_repeat_byte(_read_footer, 0, FOOTER_SIZE, FOOTER_BYTE);
-
-    // if (v) return true;
-    // printf ("[FOOTER] error: data mismatch: ");
-    // for (int i = 0; i < FOOTER_SIZE; i++) {
-    //     printf (" %d", _read_footer[i]);
-    // }
-    // printf ("\n");
-    // return false;
     return check_repeat_byte(_read_footer, 0, FOOTER_SIZE, FOOTER_BYTE);
-    ;
 }
 
 void TCPLink::_rstTimeout()
@@ -250,14 +247,14 @@ bool TCPLink::_checkTimeout()
     return false;
 }
 
-bool TCPLink::write(const uint8_t *payload, long payload_size)
+bool TCPLink::write(const uint8_t *payload, long payload_size, double timestamp)
 {
     if (!_link_ready)
         return false;
 
     long transmited_size = 0;
 
-    int write_status = write_header(_connSockFd, _default_header, payload_size);
+    int write_status = write_header(_connSockFd, _default_header, payload_size, timestamp);
 
     if (write_status == -2)
         _write_with_invalid_state = true;
@@ -268,7 +265,7 @@ bool TCPLink::write(const uint8_t *payload, long payload_size)
         return false;
     }
 
-    while (_is_running && transmited_size < payload_size)
+    while (transmited_size < payload_size)
     {
         long max_package_size = min(payload_size - transmited_size, DATALINK_MTU);
         long partialSize = send(_connSockFd, payload + transmited_size, max_package_size, MSG_NOSIGNAL);
@@ -297,25 +294,31 @@ bool TCPLink::write(const uint8_t *payload, long payload_size)
     _write_with_invalid_state = false;
     return true;
 }
-std::vector<uint8_t> TCPLink::_read_raw()
-{
-    if (!_link_ready)
-        return {};
 
-    long size = _readMessageHeader();
+std::tuple<std::vector<uint8_t>, double> TCPLink::_read_raw()
+{
+
+    if (!_link_ready)
+        return {std::vector<u_int8_t>(), -1};
+
+    auto [size, timestamp] = _readMessageHeader();
     if (size <= 0)
-        return {};
+    {
+        return {std::vector<u_int8_t>(), -1};
+    }
 
     std::vector<uint8_t> res;
     res.resize(size);
 
     if (_readFromSocket(_connSockFd, &res[0], size) && _readMessageFooter())
     {
-        return res;
+        return {res, timestamp};
     }
 
+    // printf ("invalid footer\n");
+
     res.clear();
-    return std::vector<uint8_t>();
+    return {std::vector<uint8_t>(), -1};
 }
 
 void build_default_header(uint8_t *header)
@@ -325,7 +328,7 @@ void build_default_header(uint8_t *header)
     for (int i = 0; i < HEADER_LEN; i++)
         header[i] = HEADER_INIT_BYTE;
 
-    int st = HEADER_LEN + sizeof(long);
+    int st = HEADER_SIZE - HEADER_LEN;
 
     for (int i = 0; i < HEADER_LEN; i++)
         header[i + st] = HEADER_FINISH_BYTE;
@@ -385,7 +388,7 @@ void TCPLink::_loop()
 
 int TCPLink::_openLink()
 {
-    
+
     if (_host == nullptr)
         return _bindPort();
 
@@ -698,17 +701,25 @@ bool TCPLink::hasData()
 {
     return _incommingMessages.size() > 0;
 }
-std::vector<uint8_t> TCPLink::readMessage()
+std::tuple<std::vector<uint8_t>, double> TCPLink::readMessage()
 {
     std::lock_guard<std::mutex> guard(_incomming_data_mtx);
-    if (!hasData()) return {};
+    if (!_link_ready || !hasData())
+        return {std::vector<uint8_t>(), 0};
+
     auto data = _incommingMessages.front();
     _incommingMessages.pop();
     return data;
 }
 int TCPLink::_dataTransfer()
 {
-    auto raw = _read_raw();
+    auto res = _read_raw();
+    auto [raw, timestamp] = res;
+
+    if (timestamp < 0)
+    {
+        return STATE_CONNECTION_OPENED;
+    }
 
     if (_checkTimeout())
     {
@@ -727,30 +738,50 @@ int TCPLink::_dataTransfer()
 #ifdef DEBUG
         printf("writing the message to the queue\n");
 #endif
-        _incommingMessages.push(raw);
+        _incommingMessages.push(res);
         _rstTimeout();
     }
 
     return STATE_CONNECTION_OPENED;
 }
-long TCPLink::readMessageSize() {
-    if (!_link_ready || !hasData()) {
+long TCPLink::readMessageSize()
+{
+    if (!_link_ready || !hasData())
+    {
         return 0;
     }
-    
-    return _incommingMessages.front().size();
+
+    auto [raw, timestamp] = _incommingMessages.front();
+    if (timestamp < 0)
+        return 0;
+
+    return raw.size();
 }
 
-long TCPLink::readMessageToBuffer(uint8_t *buffer, long size) {
-    if (size <= 0) return size;
-    
-    if (!_link_ready || !hasData()) {
+long TCPLink::readMessageToBuffer(uint8_t *buffer, long size, double *timestamp)
+{
+    if (size <= 0)
+        return size;
+
+    if (!_link_ready || !hasData())
+    {
         return 0;
     }
 
-    auto msg = readMessage();
+    auto [msg, ts] = readMessage();
+    if (ts < 0)
+    {
+        *timestamp = ts;
+        return 0;
+    }
+    if (msg.size() == 0)
+    {
+        *timestamp = -1;
+        return 0;
+    }
     long read_size = min(msg.size(), size);
-    
+
     memcpy(buffer, &msg[0], read_size);
+    *timestamp = ts;
     return read_size;
 }

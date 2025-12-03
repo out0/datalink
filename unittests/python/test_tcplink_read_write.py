@@ -33,15 +33,16 @@ class TestDataLinkReadWrite(unittest.TestCase):
         start = time.time()
         size = 1024 * 1024
         payload = "A" * size
-        self.assertTrue(client.write(payload))
+        self.assertTrue(client.write(payload, 123.45))
 
         while not server.has_data():
             time.sleep(0.01)
 
-        data, sz = server.read()
+        data, sz, timestamp = server.read()
         total_exec_time = 1000*(time.time() - start)
         print (f"data transfer executed in {total_exec_time:.2f} ms")
         self.assertEqual(size, sz)
+        self.assertAlmostEqual(timestamp, 123.45, places=2)
         for i in range(size):
             if data[i] != payload[i]:
                 self.fail("data mismatch")

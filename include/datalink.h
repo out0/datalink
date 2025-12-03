@@ -60,7 +60,6 @@ typedef union int8p
 } int8p;
 
 
-
 class Datalink
 {
 

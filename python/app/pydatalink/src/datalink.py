@@ -1,7 +1,7 @@
 import ctypes
 import os
 import numpy as np
-import json
+import time
 
 
 FLOAT_SIZE_BYTES = 4  # sizeof_float
@@ -55,7 +55,7 @@ class Datalink:
 
         Datalink.lib.write_raw_data.restype = ctypes.c_bool
         Datalink.lib.write_raw_data.argtypes = [ctypes.c_void_p,
-                                                ctypes.c_char_p, ctypes.c_long]
+                                                ctypes.c_char_p, ctypes.c_long, ctypes.c_double]
 
         Datalink.lib.is_ready.restype = ctypes.c_bool
         Datalink.lib.is_ready.argtypes = [ctypes.c_void_p]
@@ -66,7 +66,7 @@ class Datalink:
 
         Datalink.lib.read_next_message.restype = ctypes.c_long
         Datalink.lib.read_next_message.argtypes = [
-            ctypes.c_void_p, ctypes.POINTER(ctypes.c_ubyte), ctypes.c_long]
+            ctypes.c_void_p, ctypes.POINTER(ctypes.c_ubyte), ctypes.c_long, ctypes.POINTER(ctypes.c_double)]
 
         Datalink.lib.has_data.restype = ctypes.c_bool
         Datalink.lib.has_data.argtypes = [ctypes.c_void_p]
@@ -80,37 +80,44 @@ class Datalink:
     def has_data(self) -> bool:
         return Datalink.lib.has_data(self.link)
 
-    def read(self) -> tuple[str, int]:
-        raw_data, size = self.read_bytes()
+    def read(self) -> tuple[str, int, float]:
+        raw_data, size, timestamp = self.read_bytes()
         data = raw_data.decode('utf-8')
 
         # Datalink.lib.free_memory(result_ptr)
-        return data, size
+        return data, size, timestamp
 
-    def read_bytes(self) -> tuple[bytes, int]:
+    def read_bytes(self) -> tuple[bytes, int, float]:
 
         raw_size = Datalink.lib.next_message_size(self.link)
 
         pointer_type = ctypes.POINTER(ctypes.c_ubyte)        
         data_block = (ctypes.c_ubyte * raw_size)()
         data_pointer = ctypes.cast(ctypes.addressof(data_block), pointer_type)
+        timestamp = ctypes.c_double()
+        read_size = Datalink.lib.read_next_message(self.link, data_pointer, raw_size, ctypes.byref(timestamp))
 
-        read_size = Datalink.lib.read_next_message(self.link, data_pointer, raw_size)
+        if read_size == 0:
+            return bytes(), 0, 0
+
         if read_size != raw_size:
             raise "Read size does not match expected size"
 
-        return bytes(data_block), read_size
+        return bytes(data_block), read_size, timestamp.value
 
 
-    def __write_np(self, data: np.array) -> bool:
+    def __write_np(self, data: np.array, timestamp: float = -1) -> bool:
         raw_data = data.tobytes()
         size = len(raw_data)
+        if timestamp < 0:
+            timestamp = time.time()
         return Datalink.lib.write_raw_data(
                 self.link,
                 ctypes.c_char_p(raw_data),
-                ctypes.c_long(size))
+                ctypes.c_long(size),
+                timestamp)
 
-    def write(self, data: any) -> bool:
+    def write(self, data: any, timestamp: float = -1) -> bool:
         if isinstance(data, np.ndarray):
             return self.__write_np(data)
 
@@ -120,14 +127,18 @@ class Datalink:
             else:
                 msg = str(data)
 
+            if timestamp < 0:
+                timestamp = time.time()
+
             return Datalink.lib.write_raw_data(
                 self.link,
                 ctypes.c_char_p(msg.encode('utf-8')),
-                ctypes.c_long(len(data)))
+                ctypes.c_long(len(data)),
+                timestamp)
 
-    def read_np(self, shape, dtype) -> tuple[np.ndarray, int]:
-        raw_data, size = self.read_bytes()
+    def read_np(self, shape, dtype) -> tuple[np.ndarray, int, float]:
+        raw_data, size, timestamp = self.read_bytes()
         if size == 0:
             return np.array([]), 0        
         new_arr = np.frombuffer(raw_data, dtype=dtype)
-        return new_arr.reshape(shape), size
+        return new_arr.reshape(shape), size, timestamp
