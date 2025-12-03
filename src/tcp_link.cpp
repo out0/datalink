@@ -133,7 +133,7 @@ bool TCPLink::_readFromSocket(int sockfd, uint8_t *buffer, long size)
     long read_size = 0;
     long max_package_size = -1;
 
-    while (read_size < size)
+    while (_is_running && read_size < size)
     {
         max_package_size = min(size - read_size, DATALINK_MRU);
 
@@ -268,7 +268,7 @@ bool TCPLink::write(const uint8_t *payload, long payload_size)
         return false;
     }
 
-    while (transmited_size < payload_size)
+    while (_is_running && transmited_size < payload_size)
     {
         long max_package_size = min(payload_size - transmited_size, DATALINK_MTU);
         long partialSize = send(_connSockFd, payload + transmited_size, max_package_size, MSG_NOSIGNAL);
@@ -350,9 +350,13 @@ void TCPLink::_loop()
     switch (_state)
     {
     case STATE_CONNECTION_CLOSED:
+        if (_host == nullptr)
+            wait_ms(1);
+        _rstTimeout();
         _state = _openLink();
         break;
     case STATE_WAIT_LISTEN:
+        _rstTimeout();
         _state = _acceptIncommingConnection();
         break;
     case STATE_CONNECTION_OPENED:
@@ -381,6 +385,7 @@ void TCPLink::_loop()
 
 int TCPLink::_openLink()
 {
+    
     if (_host == nullptr)
         return _bindPort();
 

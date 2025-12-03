@@ -61,7 +61,7 @@ TEST(TCPLinkReadWrite, TestReadWriteTimeoutSuccess)
     TCPLink server(20011, 50);
     TCPLink client("127.0.0.1", 20011, 50);
 
-    int max_loops = 10;
+    int max_loops = 1000;
     while (max_loops >= 0)
     {
         if (server.isReady() && client.isReady())
