@@ -66,7 +66,8 @@ class TestDataLink(unittest.TestCase):
             total_exec_time = 1000*(time.time() - start)
             if total_exec_time > max_ms:
                 return
-    
+
+#from pydatalink import Datalink
     def test_multiple_tcp_connect_with_timeout(self):
         client1 = Datalink(host="127.0.0.1", port=20001, timeout=100)
         client2 = Datalink(host="127.0.0.1", port=20002, timeout=100)

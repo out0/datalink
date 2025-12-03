@@ -538,7 +538,7 @@ int TCPLink::_openConnection()
     std::memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(_port);
-    std::memcpy(&server_addr.sin_addr, server_info->h_addr, server_info->h_length);
+    server_addr.sin_addr.s_addr = inet_addr(_host);
 
 #ifdef NON_BLOCKING
     // perform a non-blocking connect and wait up to _timeout_ms for it to complete
