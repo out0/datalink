@@ -33,7 +33,10 @@ Server example in C++ (sending as much data as possible):
             printf("client connected\n");
         }
         printf ("sending payload\n");
-        link.write(payload, SIZE);        
+        
+        // you can replace this with a true system timestamp
+        double timestamp = 123.45;
+        link.write(payload, SIZE, timestamp);
     }
 
 ```
@@ -55,9 +58,14 @@ Client example in C++ (receiving as much data as possible):
         }
         
         if (link.hasData()) {
-            auto data = link.readMessage();
-            printf("received %ld bytes\n", data.size());
+            auto [data, timestamp] = link.readMessage();
+            printf("received %ld bytes with timestamp %f\n", data.size(), timestamp);
         }
+
+        // optionally, we can send a zero-byte payload that is going to be ignored by the receiver,
+        // which is used to keep the connection alive in case we're not exchanging messages (only receiving).
+        // Since the timeout is only reset when we receive a message, this avoid wasting time with auto-reconnection.
+        link.write_keep_alive();
     }
 
 ```
@@ -94,8 +102,10 @@ Client example in Python (receiving as much data as possible):
             while not link.is_ready():
                 time.sleep(0.01)
         
-        rcv, sz = link.read()
-        print (f"received: {sz} bytes")
+        rcv, sz, timestamp = link.read()
+        print (f"received: {sz} bytes, timestamp: {timestamp}")
+
+        link.write_keep_alive()
 ```
 
 Server example in Python (sending a heavy 1000x1000x3 np.float32 array):
@@ -129,11 +139,15 @@ Client example in Python (receiving a heavy 1000x1000x3 np.float32 array):
                 time.sleep(0.01)
         
         if link.has_data():
-            rcv, sz = link.read_np((1000, 1000, 3), dtype=np.float32)
+            rcv, sz, timestamp = link.read_np((1000, 1000, 3), dtype=np.float32)
             if sz == 0:
                 continue
+            
+            link.write_keep_alive()
+            
             print (f"received: {sz} bytes")
             print (f"array shape: {rcv.shape}")
+
 ```
 
 
