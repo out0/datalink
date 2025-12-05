@@ -248,6 +248,34 @@ bool TCPLink::_checkTimeout()
     return false;
 }
 
+bool TCPLink::writeKeepAlive()
+{
+    int write_status = write_header(_connSockFd, _default_header, 0, 1);
+    if (write_status == -2)
+        _write_with_invalid_state = true;
+
+    if (write_status == -1)
+    {
+        fprintf(stderr, "!! [datalink error] unable to send message header\n");
+        return false;
+    }
+
+    write_status = write_footer(_connSockFd, _default_footer);
+
+    if (write_status == -2)
+        _write_with_invalid_state = true;
+
+    if (write_status == -1)
+    {
+        fprintf(stderr, "!! [datalink error] unable to send message footer\n");
+        return false;
+    }
+
+    //_rstTimeout();
+    _write_with_invalid_state = false;
+    return true;
+}
+
 bool TCPLink::write(const uint8_t *payload, long payload_size, double timestamp)
 {
     if (!_link_ready)
@@ -291,7 +319,7 @@ bool TCPLink::write(const uint8_t *payload, long payload_size, double timestamp)
         return false;
     }
 
-    _rstTimeout();
+    //_rstTimeout();
     _write_with_invalid_state = false;
     return true;
 }
@@ -303,9 +331,17 @@ std::tuple<std::vector<uint8_t>, double> TCPLink::_read_raw()
         return {std::vector<u_int8_t>(), -1};
 
     auto [size, timestamp] = _readMessageHeader();
-    if (size <= 0)
+    if (size < 0)
     {
         return {std::vector<u_int8_t>(), -1};
+    }
+    if (size == 0) {
+        
+        if (!_readMessageFooter()) {
+            return {std::vector<uint8_t>(), -1};
+        }
+
+        return {std::vector<uint8_t>(), timestamp};
     }
 
     std::vector<uint8_t> res;
@@ -351,7 +387,8 @@ void TCPLink::_loop()
         _write_with_invalid_state = false;
     }
 
-    if (_checkTimeout()) {
+    if (_checkTimeout())
+    {
         _state = STATE_CONNECTION_CLOSING;
         _rstTimeout();
     }
@@ -745,8 +782,8 @@ int TCPLink::_dataTransfer()
         printf("writing the message to the queue\n");
 #endif
         _incommingMessages.push(res);
-        _rstTimeout();
     }
+    _rstTimeout();
 
     return STATE_CONNECTION_OPENED;
 }
@@ -792,7 +829,8 @@ long TCPLink::readMessageToBuffer(uint8_t *buffer, long size, double *timestamp)
     return read_size;
 }
 
-void TCPLink::clearBuffer() {
+void TCPLink::clearBuffer()
+{
     std::lock_guard<std::mutex> guard(_incomming_data_mtx);
     while (!_incommingMessages.empty())
         _incommingMessages.pop();

@@ -17,9 +17,13 @@ def main ():
         
         if link.has_data():
             #rcv, sz = link.read_bytes()
-            rcv, sz = link.read_np((1024, 1024), dtype=np.int8)
+            rcv, sz, timestap = link.read_np((1024, 1024), dtype=np.int8)
+            if sz == 0:
+                continue
             print (f"received {sz} bytes")
             #rcv, sz = link.read_bytes()
+
+            link.write_keep_alive()
             
             # print("[")
             # for i in range(0, 10):

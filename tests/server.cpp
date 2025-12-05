@@ -26,6 +26,8 @@ int main(int argc, char **argv)
         }
         printf ("sending payload\n");
         link.write(payload, SIZE, 123.45);
+
+        auto [k, t] = link.readMessage();
         
         //printf ("hit enter\n");
         //std::cin.get();

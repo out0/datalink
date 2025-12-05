@@ -57,6 +57,10 @@ class Datalink:
         Datalink.lib.write_raw_data.argtypes = [ctypes.c_void_p,
                                                 ctypes.c_char_p, ctypes.c_long, ctypes.c_double]
 
+        Datalink.lib.write_keep_alive_message.restype = ctypes.c_bool
+        Datalink.lib.write_keep_alive_message.argtypes = [ctypes.c_void_p]
+
+
         Datalink.lib.is_ready.restype = ctypes.c_bool
         Datalink.lib.is_ready.argtypes = [ctypes.c_void_p]
 
@@ -144,6 +148,10 @@ class Datalink:
                 ctypes.c_char_p(msg.encode('utf-8')),
                 ctypes.c_long(len(data)),
                 timestamp)
+        
+    def write_keep_alive(self) -> bool:
+        return Datalink.lib.write_keep_alive_message(self.link)
+    
     def _shape_size(self, shape) -> int:
         size = 1
         for dim in shape:

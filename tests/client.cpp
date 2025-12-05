@@ -10,6 +10,8 @@ int main(int argc, char **argv)
 
     TCPLink link("127.0.0.1", 20000, 100);
 
+    //uint8_t keep_alive[] = {0x0};
+
     int j = 9;
     while (j >= 0)
     {
@@ -24,6 +26,9 @@ int main(int argc, char **argv)
         if (link.hasData()) {
             auto [data, timestamp] = link.readMessage();
             printf("received %ld bytes [%f]\n", data.size(), timestamp);
+            //link.write(keep_alive, 1, 1);
+            
+            link.write();
             //j--;
             // auto data = link.readRawMessage();
             // printf("received %ld bytes\n", data.size);

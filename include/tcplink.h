@@ -61,6 +61,7 @@ public:
 
     bool isReady();
     bool write(const uint8_t *payload, long payload_size, double timestamp);
+    bool writeKeepAlive();
     bool hasData();
 
     std::tuple<std::vector<uint8_t>, double> readMessage();

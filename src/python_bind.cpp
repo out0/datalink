@@ -81,4 +81,9 @@ extern "C"
                 auto ptr = ((TCPLink *)link);
                 return ptr->clearBuffer();
         }
+
+        bool write_keep_alive_message(void *link) {
+                auto ptr = ((TCPLink *)link);
+                return ptr->writeKeepAlive();                
+        }
 }
