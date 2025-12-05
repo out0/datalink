@@ -66,4 +66,5 @@ public:
     std::tuple<std::vector<uint8_t>, double> readMessage();
     long readMessageSize();
     long readMessageToBuffer(uint8_t *buffer, long size, double *timestamp);
+    void clearBuffer();
 };

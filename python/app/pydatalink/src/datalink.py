@@ -71,6 +71,9 @@ class Datalink:
         Datalink.lib.has_data.restype = ctypes.c_bool
         Datalink.lib.has_data.argtypes = [ctypes.c_void_p]
 
+        Datalink.lib.clear_buffer.restype = None
+        Datalink.lib.clear_buffer.argtypes = [ctypes.c_void_p]
+
     def __del__(self):
         Datalink.lib.destroy_tcp_link(self.link)
 
@@ -79,6 +82,12 @@ class Datalink:
 
     def has_data(self) -> bool:
         return Datalink.lib.has_data(self.link)
+    
+    def next_message_size(self) -> int:
+        return Datalink.lib.next_message_size(self.link)
+    
+    def clear_buffer(self) -> None:
+        Datalink.lib.clear_buffer(self.link)
 
     def read(self) -> tuple[str, int, float]:
         raw_data, size, timestamp = self.read_bytes()
@@ -89,7 +98,7 @@ class Datalink:
 
     def read_bytes(self) -> tuple[bytes, int, float]:
 
-        raw_size = Datalink.lib.next_message_size(self.link)
+        raw_size = self.next_message_size()
 
         pointer_type = ctypes.POINTER(ctypes.c_ubyte)        
         data_block = (ctypes.c_ubyte * raw_size)()

@@ -75,4 +75,10 @@ extern "C"
                 auto ptr = ((TCPLink *)link);
                 return ptr->hasData();
         }
+
+        void clear_buffer(void *link)
+        {
+                auto ptr = ((TCPLink *)link);
+                return ptr->clearBuffer();
+        }
 }

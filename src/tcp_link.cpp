@@ -756,7 +756,7 @@ long TCPLink::readMessageSize()
     {
         return 0;
     }
-
+    std::lock_guard<std::mutex> guard(_incomming_data_mtx);
     auto [raw, timestamp] = _incommingMessages.front();
     if (timestamp < 0)
         return 0;
@@ -790,4 +790,10 @@ long TCPLink::readMessageToBuffer(uint8_t *buffer, long size, double *timestamp)
     memcpy(buffer, &msg[0], read_size);
     *timestamp = ts;
     return read_size;
+}
+
+void TCPLink::clearBuffer() {
+    std::lock_guard<std::mutex> guard(_incomming_data_mtx);
+    while (!_incommingMessages.empty())
+        _incommingMessages.pop();
 }
