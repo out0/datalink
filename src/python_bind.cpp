@@ -19,18 +19,18 @@ extern double *data_decode_double(uint8_t *data, long size);
 
 extern "C"
 {
-        void *init_tcp_server(int port, float timeout)
+        void *init_tcp_server(int port, float timeout, bool debug)
         {
-                auto link = new TCPLink(port, timeout);
+                auto link = new TCPLink(port, timeout, debug);
 #ifdef DEBUG_BIND
                 printf("creating a Datalink server %p with port: %d\n", link, port);
 #endif
                 return link;
         }
 
-        void *init_tcp_client(char *host, int port, float timeout)
+        void *init_tcp_client(char *host, int port, float timeout, bool debug)
         {
-                auto link = new TCPLink(host, port, timeout);
+                auto link = new TCPLink(host, port, timeout, debug);
 #ifdef DEBUG_BIND
                 printf("creating a Datalink client %p to host %s and port: %d\n", link, host, port);
 #endif

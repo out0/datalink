@@ -44,6 +44,7 @@ private:
     int _openConnection();
     int _waitConnectionToServerIsCompleted();
     int _dataTransfer();
+    bool _debug;
     void _linkRun();
     bool _readFromSocket(int sockfd, uint8_t *buffer, long size);
     std::tuple<long, double> _readMessageHeader();
@@ -54,9 +55,9 @@ private:
     std::mutex _incomming_data_mtx;
 
 public:
-    TCPLink(const char *server, int port, float no_data_timeout_ms = -1);
-    TCPLink(char *server, int port, float no_data_timeout_ms = -1);
-    TCPLink(int port, float no_data_timeout_ms = -1);
+    TCPLink(const char *server, int port, float no_data_timeout_ms = -1, bool debug_mode = false);
+    TCPLink(char *server, int port, float no_data_timeout_ms = -1, bool debug_mode = false);
+    TCPLink(int port, float no_data_timeout_ms = -1, bool debug_mode = false);
     ~TCPLink();
 
     bool isReady();

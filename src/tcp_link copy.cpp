@@ -23,12 +23,15 @@
 #define DATALINK_MTU 1024
 #define DATALINK_MRU 1024
 
-// #define DEBUG 1
+//#define DEBUG 1
 
 extern timeval set_timeout_ms(double timeout_ms);
 
-bool check_socket_status_code_is_connection_lost(int errorCode, bool debug)
+bool check_connection_lost(int socketResult, int errorCode)
 {
+    if (socketResult >= 0)
+        return false;
+
     switch (errorCode)
     {
     case 9:
@@ -41,14 +44,13 @@ bool check_socket_status_code_is_connection_lost(int errorCode, bool debug)
     case 104: // connection reset by peer
     case 107: // endpoint is not connected
     case 111: // connection refused
-        if (debug)
-        {
-            printf("[datalink] connection lost code: %d\n", errorCode);
-            perror("reason\n");
-        }
+#ifdef DEBUG
+        printf("[datalink] connection lost code: %d\n", errorCode);
+        perror("reason\n");
+#endif
         return true;
     case 11:
-        // if (_debug) {
+        // #ifdef DEBUG
         //         printf("[datalink] connection lost code: %d\n", errorCode);
         //         perror("reason\n");
         // #endif
@@ -58,14 +60,6 @@ bool check_socket_status_code_is_connection_lost(int errorCode, bool debug)
         perror("reason\n");
         return true;
     }
-}
-
-bool check_connection_lost(int socketResult, int errorCode, bool debug)
-{
-    if (socketResult >= 0)
-        return false;
-
-    return check_socket_status_code_is_connection_lost(errorCode, debug);
 }
 
 inline long min(long a, long b)
@@ -83,7 +77,7 @@ inline void wait_ms(int ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
-int write_header(int sockfd, uint8_t *default_header, long payload_size, double timestamp, bool debug)
+int write_header(int sockfd, uint8_t *default_header, long payload_size, double timestamp)
 {
     longp p;
     p.val = payload_size;
@@ -113,14 +107,14 @@ int write_header(int sockfd, uint8_t *default_header, long payload_size, double 
 
     int i = send(sockfd, default_header, HEADER_SIZE, MSG_NOSIGNAL);
 
-    if (check_connection_lost(i, errno, debug))
+    if (check_connection_lost(i, errno))
     {
         return -2;
     }
 
     return (i == HEADER_SIZE) ? 0 : -1;
 }
-int write_footer(int sockfd, uint8_t *default_footer, bool debug)
+int write_footer(int sockfd, uint8_t *default_footer)
 {
     // printf ("sent footer: ");
     // for (int i = 0; i < FOOTER_SIZE; i++)
@@ -130,7 +124,7 @@ int write_footer(int sockfd, uint8_t *default_footer, bool debug)
     // printf ("\n");
 
     int i = send(sockfd, default_footer, FOOTER_SIZE, MSG_NOSIGNAL);
-    if (check_connection_lost(i, errno, debug))
+    if (check_connection_lost(i, errno))
     {
         return -2;
     }
@@ -158,7 +152,7 @@ bool TCPLink::_readFromSocket(int sockfd, uint8_t *buffer, long size)
 
         int partialSize = recv(sockfd, buffer + read_size, max_package_size, MSG_DONTWAIT);
 
-        if (check_connection_lost(partialSize, errno, _debug))
+        if (check_connection_lost(partialSize, errno))
             return false;
 
         if (_checkTimeout())
@@ -172,7 +166,7 @@ bool TCPLink::_readFromSocket(int sockfd, uint8_t *buffer, long size)
             perror("read");
             printf("errno = %d\n", errno);
             return STATE_CONNECTION_CLOSING;
-            // if (_debug) {_DATA
+            // #ifdef DEBUG_DATA
             //             printf("read from socket returned -1 data for partial read\n");
             // #endif
             //             return false;
@@ -247,10 +241,9 @@ bool TCPLink::_checkTimeout()
 
     if (1000 * (time_now() - _timeoutStart) > _timeout_ms)
     {
-        if (_debug)
-        {
-            printf("[datalink] TIMEOUT\n");
-        }
+#ifdef DEBUG
+        printf("[datalink] TIMEOUT\n");
+#endif
         return true;
     }
     return false;
@@ -258,7 +251,7 @@ bool TCPLink::_checkTimeout()
 
 bool TCPLink::writeKeepAlive()
 {
-    int write_status = write_header(_connSockFd, _default_header, 0, 1, _debug);
+    int write_status = write_header(_connSockFd, _default_header, 0, 1);
     if (write_status == -2)
         _write_with_invalid_state = true;
 
@@ -268,7 +261,7 @@ bool TCPLink::writeKeepAlive()
         return false;
     }
 
-    write_status = write_footer(_connSockFd, _default_footer, _debug);
+    write_status = write_footer(_connSockFd, _default_footer);
 
     if (write_status == -2)
         _write_with_invalid_state = true;
@@ -291,7 +284,7 @@ bool TCPLink::write(const uint8_t *payload, long payload_size, double timestamp)
 
     long transmited_size = 0;
 
-    int write_status = write_header(_connSockFd, _default_header, payload_size, timestamp, _debug);
+    int write_status = write_header(_connSockFd, _default_header, payload_size, timestamp);
 
     if (write_status == -2)
         _write_with_invalid_state = true;
@@ -307,7 +300,7 @@ bool TCPLink::write(const uint8_t *payload, long payload_size, double timestamp)
         long max_package_size = min(payload_size - transmited_size, DATALINK_MTU);
         long partialSize = send(_connSockFd, payload + transmited_size, max_package_size, MSG_NOSIGNAL);
 
-        if (check_connection_lost(partialSize, errno, _debug))
+        if (check_connection_lost(partialSize, errno))
             return false;
 
         if (_checkTimeout())
@@ -316,7 +309,7 @@ bool TCPLink::write(const uint8_t *payload, long payload_size, double timestamp)
         transmited_size += partialSize;
     }
 
-    write_status = write_footer(_connSockFd, _default_footer, _debug);
+    write_status = write_footer(_connSockFd, _default_footer);
 
     if (write_status == -2)
         _write_with_invalid_state = true;
@@ -343,11 +336,9 @@ std::tuple<std::vector<uint8_t>, double> TCPLink::_read_raw()
     {
         return {std::vector<u_int8_t>(), -1};
     }
-    if (size == 0)
-    {
-
-        if (!_readMessageFooter())
-        {
+    if (size == 0) {
+        
+        if (!_readMessageFooter()) {
             return {std::vector<uint8_t>(), -1};
         }
 
@@ -391,20 +382,16 @@ uint8_t *build_default_footer(uint8_t *footer)
 
 void TCPLink::_loop()
 {
-    if (_write_with_invalid_state && _link_ready)
+    if (_write_with_invalid_state)
     {
         _state = STATE_CONNECTION_CLOSING;
         _write_with_invalid_state = false;
-        if (_debug)
-            printf("write with invalid state\n");
     }
 
     if (_checkTimeout())
     {
         _state = STATE_CONNECTION_CLOSING;
         _rstTimeout();
-        if (_debug)
-            printf("timeout on loop\n");
     }
 
     switch (_state)
@@ -412,7 +399,6 @@ void TCPLink::_loop()
     case STATE_CONNECTION_CLOSED:
         if (_host == nullptr)
             wait_ms(1);
-
         _rstTimeout();
         _state = _openLink();
         break;
@@ -455,11 +441,6 @@ int TCPLink::_openLink()
 
 int TCPLink::_bindPort()
 {
-    if (_debug)
-    {
-        printf("bind port: init\n");
-    }
-
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
@@ -504,30 +485,19 @@ int TCPLink::_bindPort()
         close(_listenSockFd);
         return STATE_CONNECTION_CLOSED;
     }
-    if (_debug)
-    {
-        printf("Binding port %d\n", _port);
-    }
 
     return STATE_WAIT_LISTEN;
 }
 
 int TCPLink::_acceptIncommingConnection()
 {
-    if (_debug)
-    {
-        printf("Accept incoming: init\n");
-    }
+#ifdef DEBUG
+    printf("Accept incoming: init\n");
+#endif
     _link_ready = false;
 
-    wait_ms(10);
-
     if (listen(_listenSockFd, 10) < 0)
-    {
-        if (_debug)
-            printf("Accept incoming: listen not ready\n");
         return false;
-    }
 
     struct sockaddr_in client_address;
     socklen_t cli_addr_size = sizeof(client_address);
@@ -549,10 +519,9 @@ int TCPLink::_acceptIncommingConnection()
     _link_ready = true;
     _rstTimeout();
 
-    if (_debug)
-    {
-        printf("Accept incoming: client connected\n");
-    }
+#ifdef DEBUG
+    printf("Accept incoming: client connected\n");
+#endif
 
     if (!_is_running)
         return STATE_CONNECTION_CLOSED;
@@ -560,11 +529,11 @@ int TCPLink::_acceptIncommingConnection()
     return STATE_CONNECTION_OPENED;
 }
 
-int asyncTCPConnectionSucceed(int sockfd, bool debug)
+int asyncTCPConnectionSucceed(int sockfd)
 {
-    int socket_status = 0;
-    socklen_t len = sizeof(socket_status);
-    int getsockopt_status = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &socket_status, &len);
+    int error = 0;
+    socklen_t len = sizeof(error);
+    int getsockopt_status = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &error, &len);
 
     if (getsockopt_status == -1)
     {
@@ -573,23 +542,18 @@ int asyncTCPConnectionSucceed(int sockfd, bool debug)
     }
     else
     {
-        switch (socket_status)
+        if (error == 0)
         {
-        case 0:
+            // Connection successful
             return 0;
-        case EINPROGRESS:
-            return -1;
-        default:
-            if (check_socket_status_code_is_connection_lost(socket_status, debug))
-            {
-                if (debug)
-                {
-                    printf("assync TCP connect return %d, socket_status: %d\n", getsockopt_status, socket_status);
-                    perror("assync TCP msg");
-                }
-                return -3;
-            }
-            return -1;
+        }
+        else
+        {
+            // Connection failed with 'error' code
+#ifdef DEBUG
+            perror("assync TCP connect");
+#endif            
+            return -3;
         }
     }
 }
@@ -600,10 +564,9 @@ int TCPLink::_openConnection()
     int opt = 1;
     int addrlen = sizeof(address);
 
-    if (_debug)
-    {
-        printf("open connection: init\n");
-    }
+#ifdef DEBUG
+    printf("open connection: init\n");
+#endif
 
     _connSockFd = socket(AF_INET, SOCK_STREAM, 0);
     if (_connSockFd < 0)
@@ -655,11 +618,10 @@ int TCPLink::_openConnection()
         if (errno == EINPROGRESS)
             return STATE_WAIT_CONNECTION_COMPLETION;
 
-        if (_debug)
-        {
-            printf("[datalink] failed to connect to %s, %d\n", _host, _port);
-            perror("[datalink] connect");
-        }
+#ifdef DEBUG
+        printf("[datalink] failed to connect to %s, %d\n", _host, _port);
+        perror("[datalink] connect");
+#endif
         if (_checkTimeout())
             return STATE_CONNECTION_CLOSING;
 
@@ -671,7 +633,7 @@ int TCPLink::_openConnection()
 
 int TCPLink::_waitConnectionToServerIsCompleted()
 {
-    int err = asyncTCPConnectionSucceed(_connSockFd, _debug);
+    int err = asyncTCPConnectionSucceed(_connSockFd);
     if (err == -1)
         return STATE_WAIT_CONNECTION_COMPLETION;
 
@@ -683,10 +645,9 @@ int TCPLink::_waitConnectionToServerIsCompleted()
     _rstTimeout();
     _link_ready = true;
 
-    if (_debug)
-    {
-        printf("open connection: connected\n");
-    }
+#ifdef DEBUG
+    printf("open connection: connected\n");
+#endif
     return STATE_CONNECTION_OPENED;
 }
 
@@ -696,7 +657,7 @@ void TCPLink::_linkRun()
         _loop();
 }
 
-TCPLink::TCPLink(const char *server, int port, float no_data_timeout_ms, bool debug_mode)
+TCPLink::TCPLink(const char *server, int port, float no_data_timeout_ms)
 {
     if (server)
     {
@@ -712,7 +673,6 @@ TCPLink::TCPLink(const char *server, int port, float no_data_timeout_ms, bool de
     _state = STATE_CONNECTION_CLOSED;
     _connSockFd = 0;
     _timeoutStart = -1;
-    _debug = debug_mode;
     _timeout_ms = static_cast<double>(no_data_timeout_ms);
     build_default_header(_default_header);
     build_default_footer(_default_footer);
@@ -721,7 +681,7 @@ TCPLink::TCPLink(const char *server, int port, float no_data_timeout_ms, bool de
     _linkRunThread = std::make_unique<std::thread>(&TCPLink::_linkRun, this);
 }
 
-TCPLink::TCPLink(char *server, int port, float no_data_timeout_ms, bool debug_mode)
+TCPLink::TCPLink(char *server, int port, float no_data_timeout_ms)
 {
     if (server)
     {
@@ -737,7 +697,6 @@ TCPLink::TCPLink(char *server, int port, float no_data_timeout_ms, bool debug_mo
     _state = STATE_CONNECTION_CLOSED;
     _connSockFd = 0;
     _timeoutStart = -1;
-    _debug = debug_mode;
     _timeout_ms = static_cast<double>(no_data_timeout_ms);
     build_default_header(_default_header);
     build_default_footer(_default_footer);
@@ -745,14 +704,13 @@ TCPLink::TCPLink(char *server, int port, float no_data_timeout_ms, bool debug_mo
     _is_running = true;
     _linkRunThread = std::make_unique<std::thread>(&TCPLink::_linkRun, this);
 }
-TCPLink::TCPLink(int port, float no_data_timeout_ms, bool debug_mode)
+TCPLink::TCPLink(int port, float no_data_timeout_ms)
 {
     _host = nullptr;
     _port = port;
     _state = STATE_CONNECTION_CLOSED;
     _connSockFd = 0;
     _timeoutStart = -1;
-    _debug = debug_mode;
     _timeout_ms = static_cast<double>(no_data_timeout_ms);
     build_default_header(_default_header);
     build_default_footer(_default_footer);
@@ -812,24 +770,21 @@ int TCPLink::_dataTransfer()
 
     if (_checkTimeout())
     {
-        if (_debug)
-        {
-            printf("timeout in _dataTransfer\n");
-        }
+#ifdef DEBUG
+        printf("timeout in _dataTransfer\n");
+#endif
         return STATE_CONNECTION_CLOSING;
     }
 
     if (raw.size() > 0)
     {
-        if (_debug)
-        {
-            printf("recv valid data, acquiring buffer\n");
-        }
+#ifdef DEBUG
+        printf("recv valid data, acquiring buffer\n");
+#endif
         std::lock_guard<std::mutex> guard(_incomming_data_mtx);
-        if (_debug)
-        {
-            printf("writing the message to the queue\n");
-        }
+#ifdef DEBUG
+        printf("writing the message to the queue\n");
+#endif
         _incommingMessages.push(res);
     }
     _rstTimeout();

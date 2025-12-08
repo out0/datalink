@@ -19,7 +19,8 @@ test: all
 
 install: bin
 	cd build && sudo make install
-	cd python && pip3 install . --break-system-packages
+#	cd python && pip3 install . --break-system-packages
+	cd python && pip3 install .
 	cd python && rm -rf build
 	cd python && rm -rf dist
 	rm -rf dist

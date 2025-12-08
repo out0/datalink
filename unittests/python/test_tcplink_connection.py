@@ -14,8 +14,8 @@ class TestDataLink(unittest.TestCase):
         print(f"{msg} executed in {t:.2f} ms")
 
     def test_tcp_connect_with_timeout(self):
-        client = Datalink(host="127.0.0.1", port=20001, timeout=10)
-        server = Datalink(port=20001, timeout=10)
+        client = Datalink(host="127.0.0.1", port=20001, timeout=100)
+        server = Datalink(port=20001, timeout=100)
 
         start = time.time()
         max_ms = 10

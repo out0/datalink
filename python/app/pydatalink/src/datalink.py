@@ -21,7 +21,7 @@ class Datalink:
     '''
     link: ctypes.c_void_p
 
-    def __init__(self, host: str = None, port: int = -1, timeout: float = -1) -> None:
+    def __init__(self, host: str = None, port: int = -1, timeout: float = -1, debug_mode: bool = False) -> None:
         if port <= 0:
             raise Exception("port should be defined")
 
@@ -29,10 +29,10 @@ class Datalink:
 
         if host is None:
             self.link = Datalink.lib.init_tcp_server(
-                ctypes.c_int(port), ctypes.c_float(timeout))
+                ctypes.c_int(port), ctypes.c_float(timeout), debug_mode)
         else:
             self.link = Datalink.lib.init_tcp_client(ctypes.c_char_p(
-                host.encode('utf-8')), ctypes.c_int(port), ctypes.c_float(timeout))
+                host.encode('utf-8')), ctypes.c_int(port), ctypes.c_float(timeout), debug_mode)
 
     @classmethod
     def setup_cpp_lib(cls) -> None:
@@ -45,10 +45,10 @@ class Datalink:
         Datalink.lib = ctypes.CDLL(lib_path)
 
         Datalink.lib.init_tcp_server.restype = ctypes.c_void_p
-        Datalink.lib.init_tcp_server.argtypes = [ctypes.c_int]
+        Datalink.lib.init_tcp_server.argtypes = [ctypes.c_int, ctypes.c_float, ctypes.c_bool]
 
         Datalink.lib.init_tcp_client.restype = ctypes.c_void_p
-        Datalink.lib.init_tcp_client.argtypes = [ctypes.c_char_p, ctypes.c_int]
+        Datalink.lib.init_tcp_client.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.c_float, ctypes.c_bool]
 
         Datalink.lib.destroy_tcp_link.restype = None
         Datalink.lib.destroy_tcp_link.argtypes = [ctypes.c_void_p]

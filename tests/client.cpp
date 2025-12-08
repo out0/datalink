@@ -28,7 +28,7 @@ int main(int argc, char **argv)
             printf("received %ld bytes [%f]\n", data.size(), timestamp);
             //link.write(keep_alive, 1, 1);
             
-            link.write();
+            link.writeKeepAlive();
             //j--;
             // auto data = link.readRawMessage();
             // printf("received %ld bytes\n", data.size);
