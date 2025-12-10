@@ -5,6 +5,8 @@ all:
 	cd build && make -j$(nproc) VERBOSE=1
 	mv build/client .
 	mv build/server .
+	mv build/bserver .
+	mv build/bridge .
 	rm -rf build
 
 clean:

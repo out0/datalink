@@ -7,18 +7,17 @@
 
 class DataBrigde
 {
-    Datalink *inLink;
-    Datalink *outLink;
-    std::unique_ptr<std::thread> linkRunThread;
-    bool run;
-    void linkRun();
+    Datalink *_left;
+    Datalink *_right;
+    std::unique_ptr<std::thread> _leftToRight;
+    std::unique_ptr<std::thread> _rightToLeft;
+    bool _run;
+    void _leftToRightRun();
+    void _rightToLeftRun();
 
 public:
-    DataBrigde(const char *inHost, int inPort, const char *outHost, int outPort, float timeout);
-    DataBrigde(int inPort, const char *outHost, int outPort, float timeout);
-    DataBrigde(const char *inHost, int inPort, int outPort, float timeout);
-    DataBrigde(int inPort, int outPort, float timeout);
-    ~DataBrigde();    
+    DataBrigde(Datalink *left, Datalink *right);
+    ~DataBrigde();
 };
 
 #endif

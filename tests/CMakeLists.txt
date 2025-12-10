@@ -40,6 +40,7 @@ add_executable(
     ../src/datalink.cpp
     ../src/tcp_link.cpp
     ../src/utils.cpp
+    ../src/databridge.cpp
 )
 
 add_executable(
@@ -48,6 +49,27 @@ add_executable(
     ../src/datalink.cpp
     ../src/tcp_link.cpp
     ../src/utils.cpp
+    ../src/databridge.cpp
+)
+
+
+
+add_executable(
+  bserver
+    bserver.cpp
+    ../src/datalink.cpp
+    ../src/tcp_link.cpp
+    ../src/utils.cpp
+    ../src/databridge.cpp
+)
+
+add_executable(
+  bridge
+    bridge.cpp
+    ../src/datalink.cpp
+    ../src/tcp_link.cpp
+    ../src/utils.cpp
+    ../src/databridge.cpp
 )
 
 
