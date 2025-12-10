@@ -30,6 +30,7 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 SET(TARGET_H
   ../include/tcplink.h
+  ../include/datalink.h
 )
 
 

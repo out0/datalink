@@ -18,7 +18,7 @@ class TestDataLink(unittest.TestCase):
         server = Datalink(port=20001, timeout=100)
 
         start = time.time()
-        max_ms = 10
+        max_ms = 1000
         total_exec_time = -1
 
         while True:

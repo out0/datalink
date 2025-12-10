@@ -16,11 +16,9 @@ readData() reads last received data, when called, puts internal threading into i
 
 */
 
-#include <string>
-#include <thread>
-#include <mutex>
-#include <memory>
 #include <vector>
+#include <tuple>
+#include <memory>
 
 typedef union
 {
@@ -59,25 +57,24 @@ typedef union int8p
     uint8_t bval;
 } int8p;
 
-
 class Datalink
-{
-
+{    
 public:
-    Datalink(const char *server, int port, float no_data_timeout_s = -1);
-    Datalink(int port, float no_data_timeout_s = -1);
-    ~Datalink();
+    virtual bool isReady() = 0;
+    virtual bool write(const uint8_t *payload, long payload_size, double timestamp) = 0;
+    virtual bool writeKeepAlive() = 0;
+    virtual bool hasData() = 0;
 
-    bool isReady();
-    // bool hasData();
-    
+    virtual std::tuple<std::vector<uint8_t>, double> readMessage() = 0;
+    virtual long readMessageSize() = 0;
+    virtual long readMessageToBuffer(uint8_t *buffer, long size, double *timestamp) = 0;
+    virtual void clearBuffer() = 0;
 
-    // bool sendData(char *data, long data_size);
-    // bool sendData(float *data, long data_size);
-    // bool sendData(uint8_t *data, long dataSize);
-
+    static std::shared_ptr<Datalink> TcpServer(int port, float no_data_timeout_ms = -1);
+    static std::shared_ptr<Datalink> TcpClient(const char *host, int port, float no_data_timeout_ms = -1);
 
 };
+
 
 
 #endif

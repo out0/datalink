@@ -1,39 +1,25 @@
-#include "../include/tcplink.h"
-#include <unistd.h>
-
-#define SIZE 1024 * 1024
+#include "../include/datalink.h"
+#include <stdio.h>
 
 int main(int argc, char **argv)
 {
-
     printf("Data client\n");
-
-    TCPLink link("127.0.0.1", 20000, 100);
-
-    //uint8_t keep_alive[] = {0x0};
+    auto link = Datalink::TcpClient("127.0.0.1", 20000, 100);
 
     int j = 9;
     while (j >= 0)
     {
-        if (!link.isReady())
+        if (!link->isReady())
         {
             printf("Establishing a connection to the server...\n");
-            while (!link.isReady())
-                ;
+            while (!link->isReady()) {}
             printf("connected\n");
         }
         
-        if (link.hasData()) {
-            auto [data, timestamp] = link.readMessage();
-            printf("received %ld bytes [%f]\n", data.size(), timestamp);
-            //link.write(keep_alive, 1, 1);
-            
-            link.writeKeepAlive();
-            //j--;
-            // auto data = link.readRawMessage();
-            // printf("received %ld bytes\n", data.size);
-            // delete []data.data;
+        if (link->hasData()) {
+            auto [data, timestamp] = link->readMessage();
+            printf("received %ld bytes [%f]\n", data.size(), timestamp);            
+            link->writeKeepAlive();
         }
-        //sleep(0.1);
     }
 }

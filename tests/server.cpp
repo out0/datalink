@@ -1,4 +1,4 @@
-#include "../include/tcplink.h"
+#include "../include/datalink.h"
 #include <unistd.h>
 #include <iostream>
 
@@ -13,22 +13,20 @@ int main(int argc, char **argv)
     for (int i = 0; i < SIZE; i++)
         payload[i] = i % 1024;
 
-    TCPLink link(20000, 100);
+    auto link = Datalink::TcpServer(20000, 100);
 
     while (true)
     {
-        if (!link.isReady())
+        if (!link->isReady())
         {
             printf("Waiting for the client to connect\n");
-            while (!link.isReady())
-                ;
+            while (!link->isReady()) {}
             printf("client connected\n");
         }
         printf ("sending payload\n");
-        link.write(payload, SIZE, 123.45);
+        link->write(payload, SIZE, 123.45);
 
-        auto [k, t] = link.readMessage();
-        
+        auto [k, t] = link->readMessage();        
         //printf ("hit enter\n");
         //std::cin.get();
         sleep(0.01);

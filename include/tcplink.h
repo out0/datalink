@@ -15,8 +15,13 @@
 #include <queue>
 #include <vector>
 #include <sys/select.h>
+#include <string>
+#include <thread>
+#include <mutex>
+#include <memory>
+#include <vector>
 
-class TCPLink
+class TCPLink: public Datalink
 {
 private:
     char *_host;
