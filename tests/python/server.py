@@ -7,7 +7,7 @@ import time
 import numpy as np
 
 def main ():
-    link = Datalink(port=20000, timeout=1000)
+    link = Datalink(port=21000, timeout=1000)
     payload = np.full((1024, 1024), fill_value=10, dtype=np.int8)
     #payload = "A" * 1024 * 1024
 

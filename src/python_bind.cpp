@@ -2,6 +2,7 @@
 #include <memory>
 #include <cstring>
 #include "../include/datalink.h"
+#include "../include/databridge.h"
 
 // #define DEBUG_BIND 1
 
@@ -18,7 +19,8 @@ extern double *data_decode_double(uint8_t *data, long size);
 
 extern "C"
 {
-        typedef struct datalink_ptr {
+        typedef struct datalink_ptr
+        {
                 std::shared_ptr<Datalink> link;
         } datalink_ptr;
 
@@ -47,7 +49,7 @@ extern "C"
 #ifdef DEBUG_BIND
                 printf("destroying the Datalink %p\n", link);
 #endif
-                auto ptr = ((datalink_ptr *)link);                
+                auto ptr = ((datalink_ptr *)link);
                 ptr->link.reset();
                 delete ptr;
         }
@@ -93,5 +95,18 @@ extern "C"
         {
                 auto ptr = (*(std::shared_ptr<Datalink> *)link);
                 return ptr->writeKeepAlive();
+        }
+
+        void *init_bridge(void *link1, void *link2)
+        {
+                auto p1 = (datalink_ptr *)link1;
+                auto p2 = (datalink_ptr *)link2;
+                DataBrigde *ptr = new DataBrigde(p1->link.get(), p2->link.get());
+                return ptr;
+        }
+
+        void destroy_bridge(void *bridge)
+        {
+                delete ((DataBrigde *)bridge);
         }
 }

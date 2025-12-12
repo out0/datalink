@@ -29,6 +29,7 @@ DataBrigde::~DataBrigde()
         {
             _rightToLeft->join();
         }
+        
         _rightToLeft.reset();
     }
 }
