@@ -73,6 +73,7 @@ public:
     static std::shared_ptr<Datalink> TcpServer(int port, float no_data_timeout_ms = -1);
     static std::shared_ptr<Datalink> TcpClient(const char *host, int port, float no_data_timeout_ms = -1);
 
+    virtual void setForwardMode() = 0;
 };
 
 

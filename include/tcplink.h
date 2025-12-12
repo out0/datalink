@@ -39,6 +39,7 @@ private:
     bool _link_ready;
     bool _is_running;
     bool _write_with_invalid_state;
+    bool _forward_mode;
     std::unique_ptr<std::thread> _linkRunThread;
     std::queue<std::tuple<std::vector<uint8_t>, double>> _incommingMessages;
 
@@ -74,4 +75,5 @@ public:
     long readMessageSize();
     long readMessageToBuffer(uint8_t *buffer, long size, double *timestamp);
     void clearBuffer();
+    void setForwardMode();
 };

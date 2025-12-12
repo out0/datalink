@@ -6,6 +6,8 @@ DataBrigde::DataBrigde(Datalink *left, Datalink *right)
     _left = left;
     _right = right;
     _run = true;
+    left->setForwardMode();
+    right->setForwardMode();
     _leftToRight = std::make_unique<std::thread>(&DataBrigde::_leftToRightRun, this);
     _rightToLeft = std::make_unique<std::thread>(&DataBrigde::_rightToLeftRun, this);
 }

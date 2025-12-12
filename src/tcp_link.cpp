@@ -718,6 +718,7 @@ TCPLink::TCPLink(const char *server, int port, float no_data_timeout_ms, bool de
     build_default_footer(_default_footer);
     _link_ready = false;
     _is_running = true;
+    _forward_mode = false;
     _linkRunThread = std::make_unique<std::thread>(&TCPLink::_linkRun, this);
 }
 
@@ -743,6 +744,7 @@ TCPLink::TCPLink(char *server, int port, float no_data_timeout_ms, bool debug_mo
     build_default_footer(_default_footer);
     _link_ready = false;
     _is_running = true;
+    _forward_mode = false;
     _linkRunThread = std::make_unique<std::thread>(&TCPLink::_linkRun, this);
 }
 TCPLink::TCPLink(int port, float no_data_timeout_ms, bool debug_mode)
@@ -758,6 +760,7 @@ TCPLink::TCPLink(int port, float no_data_timeout_ms, bool debug_mode)
     build_default_footer(_default_footer);
     _link_ready = false;
     _is_running = true;
+    _forward_mode = false;
     _linkRunThread = std::make_unique<std::thread>(&TCPLink::_linkRun, this);
 }
 TCPLink::~TCPLink()
@@ -832,6 +835,10 @@ int TCPLink::_dataTransfer()
         }
         _incommingMessages.push(res);
     }
+    else if (_forward_mode && raw.size() == 0) {
+        std::lock_guard<std::mutex> guard(_incomming_data_mtx);
+        _incommingMessages.push(res);
+    }
     _rstTimeout();
 
     return STATE_CONNECTION_OPENED;
@@ -883,4 +890,8 @@ void TCPLink::clearBuffer()
     std::lock_guard<std::mutex> guard(_incomming_data_mtx);
     while (!_incommingMessages.empty())
         _incommingMessages.pop();
+}
+
+void TCPLink::setForwardMode() {
+    _forward_mode = true;
 }
