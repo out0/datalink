@@ -32,7 +32,7 @@ HiDrive
 *.so
 *.egg-info
 tmp34534.dat
-tests/cpp/bserver
-tests/cpp/server
-tests/cpp/client
-tests/cpp/bridge
+examples/cpp/bserver
+examples/cpp/server
+examples/cpp/client
+examples/cpp/bridge
