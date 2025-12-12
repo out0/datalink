@@ -1,7 +1,5 @@
 ## Datalink
 
-### This is still an on-going project
-
 #### Datalink provides fast dual easy client-server connection between two terminals A <------> B
 
 The idea is simple: declare one side as server and another side as client. The link is going to keep the connection and re-connect if it fails, automatically.
@@ -17,26 +15,27 @@ Server example in C++ (sending as much data as possible):
 
 ```cpp
 
-    char *payload = new char[SIZE];
+    uint8_t *payload = new uint8_t[SIZE];
     for (int i = 0; i < SIZE; i++)
         payload[i] = i % 1024;
 
-    TCPLink link(20000, 100);
+    auto link = Datalink::TcpServer(20000, 100);
 
     while (true)
     {
-        if (!link.isReady())
+        if (!link->isReady())
         {
             printf("Waiting for the client to connect\n");
-            while (!link.isReady())
-                ;
+            while (!link->isReady()) {}
             printf("client connected\n");
         }
         printf ("sending payload\n");
-        
-        // you can replace this with a true system timestamp
-        double timestamp = 123.45;
-        link.write(payload, SIZE, timestamp);
+        link->write(payload, SIZE, 123.45);
+
+        auto [k, t] = link->readMessage();        
+        //printf ("hit enter\n");
+        //std::cin.get();
+        sleep(0.01);
     }
 
 ```
@@ -45,27 +44,23 @@ Client example in C++ (receiving as much data as possible):
 
 ```cpp
 
-    TCPLink link("127.0.0.1", 20000, 100);
+    auto link = Datalink::TcpClient("127.0.0.1", 20000, 100);
 
     while (true)
     {
-        if (!link.isReady())
+        if (!link->isReady())
         {
             printf("Establishing a connection to the server...\n");
-            while (!link.isReady())
-                ;
+            while (!link->isReady()) {}
             printf("connected\n");
         }
-        
-        if (link.hasData()) {
-            auto [data, timestamp] = link.readMessage();
-            printf("received %ld bytes with timestamp %f\n", data.size(), timestamp);
+            
+        if (link->hasData()) 
+        {
+            auto [data, timestamp] = link->readMessage();
+            printf("received %ld bytes [%f]\n", data.size(), timestamp);            
+            link->writeKeepAlive();
         }
-
-        // optionally, we can send a zero-byte payload that is going to be ignored by the receiver,
-        // which is used to keep the connection alive in case we're not exchanging messages (only receiving).
-        // Since the timeout is only reset when we receive a message, this avoid wasting time with auto-reconnection.
-        link.write_keep_alive();
     }
 
 ```
@@ -150,4 +145,41 @@ Client example in Python (receiving a heavy 1000x1000x3 np.float32 array):
 
 ```
 
+### Databridge
 
+Datalink can provide a bridge to connect two unreachable endpoints. For example, lets say that you have a datalink
+A as a client, connecting to a server via port 20000 and the server is actually being server in port 21000. 
+The brigde connects those two links using two more datalinks to forward information:
+<br />
+<br />
+A <----  X  ----> B
+<br />
+<br />
+A <----> D_left-D_right  <----> B
+<br />
+<br />
+Bridge example in C++
+
+```cpp
+
+    // serves any client trying to reach port 20000
+    auto left = Datalink::TcpServer(20000, 100);
+    // connects to the client on port 21000
+    auto right = Datalink::TcpClient("127.0.0.1", 21000, 100);
+    auto bridge = DataBrigde(left.get(), right.get());
+    printf ("hit enter to kill the bridge...\n");
+    std::cin.get();
+
+```
+
+Bridge example in Python
+
+```python
+
+    left = Datalink(port=20000, timeout=100)
+    right = Datalink(host="127.0.0.1", port=21000, timeout=100)
+    Databridge(left, right)
+    print ("hit enter to kill the bridge...")
+    input()
+
+```
