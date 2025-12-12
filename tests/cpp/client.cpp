@@ -1,4 +1,4 @@
-#include "../include/datalink.h"
+#include "../../include/datalink.h"
 #include <stdio.h>
 
 int main(int argc, char **argv)

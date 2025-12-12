@@ -10,7 +10,7 @@ all:
 	rm -rf build
 
 clean:
-	rm -rf build client server
+	rm -rf build client server bserver bridge
 
 
 

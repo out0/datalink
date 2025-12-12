@@ -37,19 +37,19 @@ SET(TARGET_H
 add_executable(
   client
     client.cpp
-    ../src/datalink.cpp
-    ../src/tcp_link.cpp
-    ../src/utils.cpp
-    ../src/databridge.cpp
+    ../../src/datalink.cpp
+    ../../src/tcp_link.cpp
+    ../../src/utils.cpp
+    ../../src/databridge.cpp
 )
 
 add_executable(
   server
     server.cpp
-    ../src/datalink.cpp
-    ../src/tcp_link.cpp
-    ../src/utils.cpp
-    ../src/databridge.cpp
+    ../../src/datalink.cpp
+    ../../src/tcp_link.cpp
+    ../../src/utils.cpp
+    ../../src/databridge.cpp
 )
 
 
@@ -57,19 +57,19 @@ add_executable(
 add_executable(
   bserver
     bserver.cpp
-    ../src/datalink.cpp
-    ../src/tcp_link.cpp
-    ../src/utils.cpp
-    ../src/databridge.cpp
+    ../../src/datalink.cpp
+    ../../src/tcp_link.cpp
+    ../../src/utils.cpp
+    ../../src/databridge.cpp
 )
 
 add_executable(
   bridge
     bridge.cpp
-    ../src/datalink.cpp
-    ../src/tcp_link.cpp
-    ../src/utils.cpp
-    ../src/databridge.cpp
+    ../../src/datalink.cpp
+    ../../src/tcp_link.cpp
+    ../../src/utils.cpp
+    ../../src/databridge.cpp
 )
 
 
