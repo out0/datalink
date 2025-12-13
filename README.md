@@ -9,7 +9,8 @@ handle a stream of bytes (all connections in the world?) may support the datalin
 
 Python to C++ binding is also performed on byte array level. Python np array, string or any type of data is converted into bytes to be sent through the link. To avoid memory leaking, the python interpreter is responsible for handling the buffer data. We're allocating a new buffer for every message, since we understand that this is much more reliable.
 
-In a pure TCP local connection, we've achieved 5 Gb/s in C++ and ~4.3 Gb/s in Python which are close numbers.
+In a pure TCP local connection, we've achieved slightly more than 6 GB/s in C++ and Python, sending 1 Megabyte each 1 ms (1 Gigabyte/s or 8 GB/s input)
+
 
 Server example in C++ (sending as much data as possible):
 
@@ -185,13 +186,13 @@ Bridge example in Python
 ```
 
 
-### Object Exchance
+### Object Exchanging
 
-Python objects can easily be exchanged using Datalink, which serializes the data to bytes using pickle to transmit/receive
+Python objects can easily be exchanged using our Datalink, serializing them to bytes using pickle and transmiting the data through the network.
 
 
 ```python
-    from Datalink import Datalink, send_object
+    from pydatalink import Datalink
 
     class MyData:
         str_val: str
@@ -217,7 +218,7 @@ Alternatively, you can send it using a helper that creates a link automatically 
 and sends the object.
 
 ```python
-    from Datalink import Datalink, recv_object
+    from pydatalink import send_object
 
     class MyData:
         str_val: str
@@ -257,11 +258,11 @@ The object can be received using the datalink recv_object() method:
     print (f"\t dict_val: {data.dict_val}")
 
 ```
-Alternatively, you can send it using a helper that creates a link automatically with default parameters (port: 20000, timeout: -1)
-and sends the object.
+Alternatively, you can receive it using a helper that creates a link automatically with default parameters (port: 20000, timeout: -1)
+and receives the object.
 
 ```python
-    from Datalink import recv_object
+    from pydatalink import recv_object
     data = recv_object(data, "127.0.0.1")
 
     print ("data:")
