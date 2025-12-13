@@ -74,6 +74,9 @@ public:
     static std::shared_ptr<Datalink> TcpClient(const char *host, int port, float no_data_timeout_ms = -1);
 
     virtual void setForwardMode() = 0;
+
+    // needed to ensure that any child destructors are going to be called!
+    virtual ~Datalink() {}
 };
 
 

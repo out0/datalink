@@ -183,3 +183,95 @@ Bridge example in Python
     input()
 
 ```
+
+
+### Object Exchance
+
+Python objects can easily be exchanged using Datalink, which serializes the data to bytes using pickle to transmit/receive
+
+
+```python
+    from Datalink import Datalink, send_object
+
+    class MyData:
+        str_val: str
+        int_val: int
+        float_val: float
+        bool_val: bool
+        array_val: list
+        dict_val: dict
+
+        def __init__(self):
+            self.str_val = "abcABC"
+            self.int_val = 123
+            self.float_val = 1.23
+            self.bool_val = True
+            self.array_val = [1, 2, 3, 4, 5]
+            self.dict_val = {"a": 1, "b": 2, "c": 3}
+
+    data = MyData()
+    link = Datalink(host=host, port=port, timeout=timeout)
+    v = link.send_object(data)  # v is true if succeded
+```
+Alternatively, you can send it using a helper that creates a link automatically with default parameters (port: 20000, timeout: -1)
+and sends the object.
+
+```python
+    from Datalink import Datalink, recv_object
+
+    class MyData:
+        str_val: str
+        int_val: int
+        float_val: float
+        bool_val: bool
+        array_val: list
+        dict_val: dict
+
+        def __init__(self):
+            self.str_val = "abcABC"
+            self.int_val = 123
+            self.float_val = 1.23
+            self.bool_val = True
+            self.array_val = [1, 2, 3, 4, 5]
+            self.dict_val = {"a": 1, "b": 2, "c": 3}
+
+    data = MyData()
+    send_object(data, "127.0.0.1")
+```
+
+The object can be received using the datalink recv_object() method:
+
+
+```python
+ 
+    data = MyData()
+    link = Datalink(port=port, timeout=timeout)
+    v = link.recv_object(data)  # v is true if succeded
+
+    print ("data:")
+    print (f"\t str_val: {data.str_val}")
+    print (f"\t int_val: {data.int_val}")
+    print (f"\t float_val: {data.float_val}")
+    print (f"\t bool_val: {data.bool_val}")
+    print (f"\t array_val: {data.array_val}")
+    print (f"\t dict_val: {data.dict_val}")
+
+```
+Alternatively, you can send it using a helper that creates a link automatically with default parameters (port: 20000, timeout: -1)
+and sends the object.
+
+```python
+    from Datalink import recv_object
+    data = recv_object(data, "127.0.0.1")
+
+    print ("data:")
+    print (f"\t str_val: {data.str_val}")
+    print (f"\t int_val: {data.int_val}")
+    print (f"\t float_val: {data.float_val}")
+    print (f"\t bool_val: {data.bool_val}")
+    print (f"\t array_val: {data.array_val}")
+    print (f"\t dict_val: {data.dict_val}")
+
+
+```
+

@@ -264,7 +264,9 @@ bool TCPLink::writeKeepAlive()
 
     if (write_status == -1)
     {
+#ifdef DEBUG        
         fprintf(stderr, "!! [datalink error] unable to send message header\n");
+#endif
         return false;
     }
 
@@ -275,7 +277,9 @@ bool TCPLink::writeKeepAlive()
 
     if (write_status == -1)
     {
+#ifdef DEBUG                
         fprintf(stderr, "!! [datalink error] unable to send message footer\n");
+#endif        
         return false;
     }
 
@@ -767,21 +771,24 @@ TCPLink::~TCPLink()
 {
     _is_running = false;
 
-    if (_linkRunThread)
+    if (_linkRunThread != nullptr)
     {
         if (_linkRunThread->joinable())
         {
             _linkRunThread->join();
         }
+
         _linkRunThread.reset();
     }
 
     if (_connSockFd > 0)
         close(_connSockFd);
+
     if (_listenSockFd > 0)
         close(_listenSockFd);
 
-    delete[] _host;
+    if (_host != nullptr)
+        delete[] _host;
 }
 
 bool TCPLink::isReady()

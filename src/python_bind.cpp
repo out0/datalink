@@ -2,6 +2,7 @@
 #include <memory>
 #include <cstring>
 #include "../include/datalink.h"
+#include "../include/tcplink.h"
 #include "../include/databridge.h"
 
 // #define DEBUG_BIND 1

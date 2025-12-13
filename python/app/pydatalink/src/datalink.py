@@ -2,7 +2,7 @@ import ctypes
 import os
 import numpy as np
 import time
-
+import pickle
 
 FLOAT_SIZE_BYTES = 4  # sizeof_float
 
@@ -20,12 +20,14 @@ class Datalink:
     ''' Creates a TCP link between two endpoints
     '''
     link: ctypes.c_void_p
+    _timeout: float
 
     def __init__(self, host: str = None, port: int = -1, timeout: float = -1, debug_mode: bool = False) -> None:
         if port <= 0:
             raise Exception("port should be defined")
 
         Datalink.setup_cpp_lib()
+        self._timeout = timeout
 
         if host is None:
             self.link = Datalink.lib.init_tcp_server(
@@ -45,10 +47,12 @@ class Datalink:
         Datalink.lib = ctypes.CDLL(lib_path)
 
         Datalink.lib.init_tcp_server.restype = ctypes.c_void_p
-        Datalink.lib.init_tcp_server.argtypes = [ctypes.c_int, ctypes.c_float, ctypes.c_bool]
+        Datalink.lib.init_tcp_server.argtypes = [
+            ctypes.c_int, ctypes.c_float, ctypes.c_bool]
 
         Datalink.lib.init_tcp_client.restype = ctypes.c_void_p
-        Datalink.lib.init_tcp_client.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.c_float, ctypes.c_bool]
+        Datalink.lib.init_tcp_client.argtypes = [
+            ctypes.c_char_p, ctypes.c_int, ctypes.c_float, ctypes.c_bool]
 
         Datalink.lib.destroy_tcp_link.restype = None
         Datalink.lib.destroy_tcp_link.argtypes = [ctypes.c_void_p]
@@ -60,13 +64,11 @@ class Datalink:
         Datalink.lib.write_keep_alive_message.restype = ctypes.c_bool
         Datalink.lib.write_keep_alive_message.argtypes = [ctypes.c_void_p]
 
-
         Datalink.lib.is_ready.restype = ctypes.c_bool
         Datalink.lib.is_ready.argtypes = [ctypes.c_void_p]
 
         Datalink.lib.next_message_size.restype = ctypes.c_long
         Datalink.lib.next_message_size.argtypes = [ctypes.c_void_p]
-
 
         Datalink.lib.read_next_message.restype = ctypes.c_long
         Datalink.lib.read_next_message.argtypes = [
@@ -86,10 +88,10 @@ class Datalink:
 
     def has_data(self) -> bool:
         return Datalink.lib.has_data(self.link)
-    
+
     def next_message_size(self) -> int:
         return Datalink.lib.next_message_size(self.link)
-    
+
     def clear_buffer(self) -> None:
         Datalink.lib.clear_buffer(self.link)
 
@@ -104,11 +106,12 @@ class Datalink:
 
         raw_size = self.next_message_size()
 
-        pointer_type = ctypes.POINTER(ctypes.c_ubyte)        
+        pointer_type = ctypes.POINTER(ctypes.c_ubyte)
         data_block = (ctypes.c_ubyte * raw_size)()
         data_pointer = ctypes.cast(ctypes.addressof(data_block), pointer_type)
         timestamp = ctypes.c_double()
-        read_size = Datalink.lib.read_next_message(self.link, data_pointer, raw_size, ctypes.byref(timestamp))
+        read_size = Datalink.lib.read_next_message(
+            self.link, data_pointer, raw_size, ctypes.byref(timestamp))
 
         if read_size == 0:
             return bytes(), 0, 0
@@ -118,22 +121,26 @@ class Datalink:
 
         return bytes(data_block), read_size, timestamp.value
 
-
     def __write_np(self, data: np.array, timestamp: float = -1) -> bool:
         raw_data = data.tobytes()
         size = len(raw_data)
         if timestamp < 0:
             timestamp = time.time()
         return Datalink.lib.write_raw_data(
-                self.link,
-                ctypes.c_char_p(raw_data),
-                ctypes.c_long(size),
-                timestamp)
+            self.link,
+            ctypes.c_char_p(raw_data),
+            ctypes.c_long(size),
+            timestamp)
 
     def write(self, data: any, timestamp: float = -1) -> bool:
         if isinstance(data, np.ndarray):
             return self.__write_np(data)
-
+        elif isinstance(data, bytes):
+            return Datalink.lib.write_raw_data(
+                self.link,
+                ctypes.c_char_p(data),
+                ctypes.c_long(len(data)),
+                timestamp)
         else:
             if isinstance(data, str):
                 msg = data
@@ -148,10 +155,10 @@ class Datalink:
                 ctypes.c_char_p(msg.encode('utf-8')),
                 ctypes.c_long(len(data)),
                 timestamp)
-        
+
     def write_keep_alive(self) -> bool:
         return Datalink.lib.write_keep_alive_message(self.link)
-    
+
     def _shape_size(self, shape) -> int:
         size = 1
         for dim in shape:
@@ -161,11 +168,71 @@ class Datalink:
     def read_np(self, shape, dtype) -> tuple[np.ndarray, int, float]:
         raw_data, size, timestamp = self.read_bytes()
         if size == 0:
-            return np.array([]), 0, 0 
+            return np.array([]), 0, 0
         expected_size = self._shape_size(shape) * np.dtype(dtype).itemsize
-        if size !=expected_size:
-            print(f"Data size does not match expected size: {size} != {expected_size}")
-            return np.array([]), 0, 0 
-        
+        if size != expected_size:
+            print(
+                f"Data size does not match expected size: {size} != {expected_size}")
+            return np.array([]), 0, 0
+
         new_arr = np.frombuffer(raw_data, dtype=dtype)
         return new_arr.reshape(shape), size, timestamp
+
+    def send_object(self, object: any) -> bool:
+        raw = pickle.dumps(object)
+
+        start = time.time()
+        while not self.is_ready():
+            if self._timeout > 0 and 1000*(time.time() - start) > self._timeout:
+                return False
+            pass
+
+        acked = False
+        failed_ack_wait = False
+
+        while not acked:
+            self.write(raw, 1)
+
+            wait_loops = 0
+            
+            failed_ack_wait = False
+            while not failed_ack_wait and (not self.is_ready() or not self.has_data()):
+                if self._timeout > 0 and 1000*(time.time() - start) > self._timeout:
+                    return False
+                time.sleep(0.001)
+                wait_loops += 1
+            
+                if wait_loops > 10:
+                    failed_ack_wait = True
+
+            if not failed_ack_wait:
+                ack, s, _ = self.read_bytes()
+                acked = s == 1 and int(ack[0]) == 1
+
+        return True
+
+    def recv_object(self) -> any:
+        start = time.time()
+        while not self.is_ready():
+            if self._timeout > 0 and 1000*(time.time() - start) > self._timeout:
+                return False
+            pass
+
+        recvd = False
+
+        while not recvd:
+            while not self.is_ready() or not self.has_data():
+                if self._timeout > 0 and 1000*(time.time() - start) > self._timeout:
+                    return False
+            pass
+
+            raw, size, _ = self.read_bytes()
+            if size <= 0:
+                no_ack = bytes([0])
+                self.write(no_ack, timestamp=1)
+            else:
+                ack = bytes([1])
+                self.write(ack, timestamp=1)
+                recvd = True
+                data = pickle.loads(raw)
+                return data
