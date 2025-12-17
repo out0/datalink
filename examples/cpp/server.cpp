@@ -13,7 +13,7 @@ int main(int argc, char **argv)
     for (int i = 0; i < SIZE; i++)
         payload[i] = i % 1024;
 
-    auto link = Datalink::TcpServer(20000, 100);
+    auto link = Datalink::TcpServer(20000, 100, 1);
 
     while (true)
     {

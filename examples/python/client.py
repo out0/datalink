@@ -6,7 +6,7 @@ import faulthandler
 faulthandler.enable()
 
 def main ():
-    link = Datalink(host="127.0.0.1", port=20000, timeout=1000)
+    link = Datalink(host="127.0.0.1", port=21000, timeout=1000, max_incommming_messages_in_queue=-1)
 
     i = 0
     while True:

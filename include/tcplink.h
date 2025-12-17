@@ -57,19 +57,23 @@ private:
     bool _readMessageFooter();
     void _rstTimeout();
     bool _checkTimeout();
+    int _max_incomming_queued_messages;
     std::tuple<std::vector<uint8_t>, double> _read_raw();
     std::mutex _incomming_data_mtx;
 
 public:
-    TCPLink(const char *server, int port, float no_data_timeout_ms = -1, bool debug_mode = false);
-    TCPLink(char *server, int port, float no_data_timeout_ms = -1, bool debug_mode = false);
-    TCPLink(int port, float no_data_timeout_ms = -1, bool debug_mode = false);
+    TCPLink(const char *server, int port, float no_data_timeout_ms = -1, bool debug_mode = false, int max_incomming_queued_messages = -1);
+    TCPLink(char *server, int port, float no_data_timeout_ms = -1, bool debug_mode = false, int max_incomming_queued_messages = -1);
+    TCPLink(int port, float no_data_timeout_ms = -1, bool debug_mode = false, int max_incomming_queued_messages = -1);
     ~TCPLink();
 
     bool isReady();
     bool write(const uint8_t *payload, long payload_size, double timestamp);
     bool writeKeepAlive();
     bool hasData();
+    float timeout_ms() {
+        return _timeout_ms;
+    }
 
     std::tuple<std::vector<uint8_t>, double> readMessage();
     long readMessageSize();

@@ -264,7 +264,7 @@ bool TCPLink::writeKeepAlive()
 
     if (write_status == -1)
     {
-#ifdef DEBUG        
+#ifdef DEBUG
         fprintf(stderr, "!! [datalink error] unable to send message header\n");
 #endif
         return false;
@@ -277,9 +277,9 @@ bool TCPLink::writeKeepAlive()
 
     if (write_status == -1)
     {
-#ifdef DEBUG                
+#ifdef DEBUG
         fprintf(stderr, "!! [datalink error] unable to send message footer\n");
-#endif        
+#endif
         return false;
     }
 
@@ -700,7 +700,7 @@ void TCPLink::_linkRun()
         _loop();
 }
 
-TCPLink::TCPLink(const char *server, int port, float no_data_timeout_ms, bool debug_mode)
+TCPLink::TCPLink(const char *server, int port, float no_data_timeout_ms, bool debug_mode, int max_incomming_queued_messages)
 {
     if (server)
     {
@@ -723,10 +723,11 @@ TCPLink::TCPLink(const char *server, int port, float no_data_timeout_ms, bool de
     _link_ready = false;
     _is_running = true;
     _forward_mode = false;
+    _max_incomming_queued_messages = max_incomming_queued_messages;
     _linkRunThread = std::make_unique<std::thread>(&TCPLink::_linkRun, this);
 }
 
-TCPLink::TCPLink(char *server, int port, float no_data_timeout_ms, bool debug_mode)
+TCPLink::TCPLink(char *server, int port, float no_data_timeout_ms, bool debug_mode, int max_incomming_queued_messages)
 {
     if (server)
     {
@@ -749,9 +750,10 @@ TCPLink::TCPLink(char *server, int port, float no_data_timeout_ms, bool debug_mo
     _link_ready = false;
     _is_running = true;
     _forward_mode = false;
+    _max_incomming_queued_messages = max_incomming_queued_messages;
     _linkRunThread = std::make_unique<std::thread>(&TCPLink::_linkRun, this);
 }
-TCPLink::TCPLink(int port, float no_data_timeout_ms, bool debug_mode)
+TCPLink::TCPLink(int port, float no_data_timeout_ms, bool debug_mode, int max_incomming_queued_messages)
 {
     _host = nullptr;
     _port = port;
@@ -765,6 +767,7 @@ TCPLink::TCPLink(int port, float no_data_timeout_ms, bool debug_mode)
     _link_ready = false;
     _is_running = true;
     _forward_mode = false;
+    _max_incomming_queued_messages = max_incomming_queued_messages;
     _linkRunThread = std::make_unique<std::thread>(&TCPLink::_linkRun, this);
 }
 TCPLink::~TCPLink()
@@ -840,9 +843,13 @@ int TCPLink::_dataTransfer()
         {
             printf("writing the message to the queue\n");
         }
+        while (_max_incomming_queued_messages > 0 && _incommingMessages.size() >= _max_incomming_queued_messages) {
+            _incommingMessages.pop();
+        }
         _incommingMessages.push(res);
     }
-    else if (_forward_mode && raw.size() == 0) {
+    else if (_forward_mode && raw.size() == 0)
+    {
         std::lock_guard<std::mutex> guard(_incomming_data_mtx);
         _incommingMessages.push(res);
     }
@@ -899,6 +906,7 @@ void TCPLink::clearBuffer()
         _incommingMessages.pop();
 }
 
-void TCPLink::setForwardMode() {
+void TCPLink::setForwardMode()
+{
     _forward_mode = true;
 }
