@@ -23,8 +23,6 @@ add_library(${PROJECT_NAME} SHARED
     src/utils.cpp
     src/python_bind.cpp
     src/databridge.cpp
-    src/serializer.cpp
-    #python/pybind.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} 

@@ -35,9 +35,7 @@ SET(TARGET_H
 add_executable(
   unittest
     cpp_test_base.cpp
-    #test_tcplink_connection.cpp
     test_tcplink_read_write.cpp
-#    test_utils.cpp
     ../../src/datalink.cpp
     ../../src/tcp_link.cpp
     ../../src/utils.cpp
