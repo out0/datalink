@@ -36,3 +36,4 @@ examples/cpp/bserver
 examples/cpp/server
 examples/cpp/client
 examples/cpp/bridge
+unittests/unittest
