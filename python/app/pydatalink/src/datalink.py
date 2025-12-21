@@ -220,11 +220,11 @@ class Datalink:
 
         return True
 
-    def recv_object(self) -> any:
+    def recv_object(self) -> tuple[any, float]:
         start = time.time()
         while not self.is_ready():
             if self._timeout > 0 and 1000*(time.time() - start) > self._timeout:
-                return False
+                return None, 0
             pass
 
         recvd = False
@@ -232,10 +232,10 @@ class Datalink:
         while not recvd:
             while not self.is_ready() or not self.has_data():
                 if self._timeout > 0 and 1000*(time.time() - start) > self._timeout:
-                    return False
+                    return None, 0
             pass
 
-            raw, size, _ = self.read_bytes()
+            raw, size, timestamp = self.read_bytes()
             if size <= 0:
                 no_ack = bytes([0])
                 self.write(no_ack, timestamp=1)
@@ -244,4 +244,6 @@ class Datalink:
                 self.write(ack, timestamp=1)
                 recvd = True
                 data = pickle.loads(raw)
-                return data
+                return data, timestamp
+        
+        None, 0

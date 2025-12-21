@@ -36,6 +36,7 @@ bool Datalink::writeWithAck(uint8_t *payload, long size, double timestamp)
 
     while (!acked)
     {
+
         write(payload, size, timestamp);
 
         wait_loops = 0;
@@ -49,7 +50,7 @@ bool Datalink::writeWithAck(uint8_t *payload, long size, double timestamp)
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
             wait_loops += 1;
 
-            if (wait_loops > 10)
+            if (wait_loops > 100)
                 failed_ack_wait = true;
         }
 
@@ -81,7 +82,7 @@ std::tuple<std::vector<uint8_t>, double> Datalink::readMessageWithAck()
 
     while (!recvd)
     {
-        while (!isReady() or !hasData())
+        while (!isReady() || !hasData())
         {
             if (timeout > 0 && get_exec_time_ms(exec_start) > timeout)
                 return {std::vector<uint8_t>(), -1};

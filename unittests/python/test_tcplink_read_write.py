@@ -49,6 +49,43 @@ class TestDataLinkReadWrite(unittest.TestCase):
 
         print("END 2")
 
+    def test_double_read_without_data_repeat(self):
+        server = Datalink(port=20011, timeout=50)
+        client = Datalink(host="127.0.0.1", port=20011, timeout=50)
+
+        max_loops = 1000
+        while max_loops >= 0:
+            if server.is_ready() and client.is_ready():
+                break
+            time.sleep(0.001)
+            max_loops -= 1
+
+        if max_loops <= 0:
+            self.fail("Timeout while trying to connect")
+
+        size = 1024 * 1024  # 1 MB
+        payload = bytes([i % 100 for i in range(size)])
+
+        self.execute_start()
+        self.assertTrue(client.write(payload, 123.45))
+        self.execute_end("1MB data send client->server")
+
+        while not server.has_data():
+            time.sleep(0.001)
+        
+        self.execute_start()
+        data, timestamp = server.recv_object()
+        self.execute_end("1MB data recv client->server")
+
+        self.assertEqual(sz, size)
+        self.assertAlmostEqual(timestamp, 123.45, places=2)
+        self.assertEqual(data, payload)
+
+        self.assertFalse(server.has_data())
+        data2 = server.recv_object()
+        self.assertEqual(timestamp2, 0.0)
+        self.assertEqual(sz2, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

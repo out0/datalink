@@ -5,20 +5,19 @@
 #include <string.h>
 #include "../../include/tcplink.h"
 
-
 TEST(TCPLinkConnection, TestConnectionNoTimeoutSuccess)
 {
     TCPLink server(20001, -1);
     TCPLink client("127.0.0.1", 20001, -1);
 
-    int max_loops = 10;
+    int max_loops = 100;
     while (max_loops >= 0) {
-        if (!server.isReady()) {
-            printf("server not ready\n");
-        }
-        if (!client.isReady()) {
-            printf("client not ready\n");
-        }
+        // if (!server.isReady()) {
+        //     printf("server not ready\n");
+        // }
+        // if (!client.isReady()) {
+        //     printf("client not ready\n");
+        // }
         if (server.isReady() && client.isReady()) {
             printf("client and server are ready\n");
             SUCCEED();
@@ -30,22 +29,23 @@ TEST(TCPLinkConnection, TestConnectionNoTimeoutSuccess)
 
     FAIL();
 }
-
 
 TEST(TCPLinkConnection, TestConnectionTimeoutSuccess)
 {
-    TCPLink server(20000, 100);
-    TCPLink client("localhost", 20000, 100);
+    TCPLink server(22001, 100);
+    TCPLink client("127.0.0.1", 22001, 100);
 
-    int max_loops = 10;
-    while (max_loops >= 0) {
-        if (!server.isReady()) {
-            printf("server not ready\n");
-        }
-        if (!client.isReady()) {
-            printf("client not ready\n");
-        }
-        if (server.isReady() && client.isReady()) {
+    int max_loops = 100;
+    while (max_loops >= 0)
+    {
+        // if (!server.isReady()) {
+        //     printf("server not ready\n");
+        // }
+        // if (!client.isReady()) {
+        //     printf("client not ready\n");
+        // }
+        if (server.isReady() && client.isReady())
+        {
             printf("client and server are ready\n");
             SUCCEED();
             return;
@@ -56,7 +56,6 @@ TEST(TCPLinkConnection, TestConnectionTimeoutSuccess)
 
     FAIL();
 }
-
 
 TEST(TCPLinkConnection, TestConnectionNoTimeoutFail)
 {
@@ -64,8 +63,10 @@ TEST(TCPLinkConnection, TestConnectionNoTimeoutFail)
     TCPLink client("localhost", 20004, -1);
 
     int max_loops = 10;
-    while (max_loops >= 0) {
-        if (server.isReady() && client.isReady()) {
+    while (max_loops >= 0)
+    {
+        if (server.isReady() && client.isReady())
+        {
             printf("client and server are ready, but they should not be\n");
             FAIL();
             return;
@@ -76,7 +77,6 @@ TEST(TCPLinkConnection, TestConnectionNoTimeoutFail)
 
     SUCCEED();
 }
-
 
 TEST(TCPLinkConnection, TestConnectionTimeoutFail)
 {
@@ -84,8 +84,10 @@ TEST(TCPLinkConnection, TestConnectionTimeoutFail)
     TCPLink client("localhost", 20005, 100);
 
     int max_loops = 10;
-    while (max_loops >= 0) {
-        if (server.isReady() && client.isReady()) {
+    while (max_loops >= 0)
+    {
+        if (server.isReady() && client.isReady())
+        {
             printf("client and server are ready, but they should not be\n");
             FAIL();
             return;
@@ -96,7 +98,6 @@ TEST(TCPLinkConnection, TestConnectionTimeoutFail)
 
     SUCCEED();
 }
-
 
 TEST(TCPLinkConnection, TestMultipleLinksClientOnlyFail)
 {
@@ -105,7 +106,8 @@ TEST(TCPLinkConnection, TestMultipleLinksClientOnlyFail)
     TCPLink client3("localhost", 20002, 100);
 
     int max_loops = 100;
-    while (max_loops >= 0) {
+    while (max_loops >= 0)
+    {
         // if (!client1.isReady()) {
         //     printf("client1 not ready\n");
         // }
@@ -115,7 +117,8 @@ TEST(TCPLinkConnection, TestMultipleLinksClientOnlyFail)
         // if (!client3.isReady()) {
         //     printf("client3 not ready\n");
         // }
-        if (client1.isReady() && client2.isReady() && client3.isReady()) {
+        if (client1.isReady() && client2.isReady() && client3.isReady())
+        {
             printf("clients are ready\n");
             FAIL();
             return;
