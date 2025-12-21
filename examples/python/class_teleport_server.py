@@ -13,7 +13,7 @@ class MyData:
     dict_val: dict
         
 def main():
-    data: MyData = recv_object()
+    data, _ = recv_object()
     print ("data:")
     print (f"\t str_val: {data.str_val}")
     print (f"\t int_val: {data.int_val}")

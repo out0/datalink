@@ -187,7 +187,7 @@ class Datalink:
         new_arr = np.frombuffer(raw_data, dtype=dtype)
         return new_arr.reshape(shape), size, timestamp
 
-    def send_object(self, object: any) -> bool:
+    def send_object(self, object: any, timestamp: float, wait_ack: bool = True) -> bool:
         raw = pickle.dumps(object)
 
         start = time.time()
@@ -196,11 +196,16 @@ class Datalink:
                 return False
             pass
 
+        if not wait_ack:
+            self.write(raw, timestamp)
+            return True  
+
+
         acked = False
         failed_ack_wait = False
 
         while not acked:
-            self.write(raw, 1)
+            self.write(raw, timestamp)
 
             wait_loops = 0
             
@@ -211,7 +216,7 @@ class Datalink:
                 time.sleep(0.001)
                 wait_loops += 1
             
-                if wait_loops > 10:
+                if wait_loops > 100:
                     failed_ack_wait = True
 
             if not failed_ack_wait:
@@ -220,8 +225,9 @@ class Datalink:
 
         return True
 
-    def recv_object(self) -> tuple[any, float]:
+    def recv_object(self, send_ack: bool = True) -> tuple[any, float]:
         start = time.time()
+
         while not self.is_ready():
             if self._timeout > 0 and 1000*(time.time() - start) > self._timeout:
                 return None, 0
@@ -236,14 +242,15 @@ class Datalink:
             pass
 
             raw, size, timestamp = self.read_bytes()
-            if size <= 0:
-                no_ack = bytes([0])
-                self.write(no_ack, timestamp=1)
-            else:
-                ack = bytes([1])
-                self.write(ack, timestamp=1)
-                recvd = True
-                data = pickle.loads(raw)
-                return data, timestamp
+            if send_ack:
+                if size <= 0:
+                    no_ack = bytes([0])
+                    self.write(no_ack, timestamp=1)
+                else:
+                    ack = bytes([1])
+                    self.write(ack, timestamp=1)
+                    recvd = True
+                    data = pickle.loads(raw)
+                    return data, timestamp
         
         None, 0
